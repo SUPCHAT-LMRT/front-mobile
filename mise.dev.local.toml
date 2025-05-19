@@ -1,2 +1,0 @@
-[tasks.open-android]
-run = "CAPACITOR_ANDROID_STUDIO_PATH=/home/matteo/.local/share/JetBrains/Toolbox/apps/android-studio/bin/studio.sh pnpm exec cap open android"
