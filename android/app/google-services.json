@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "674750770577",
+    "project_id": "supchat-lmrt-c8812",
+    "storage_bucket": "supchat-lmrt-c8812.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:674750770577:android:e9c035c263cbf45a883e30",
+        "android_client_info": {
+          "package_name": "com.supchatlmrt.frontmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCEcxN88_qsp5VvCQ7mtRKMXe78BYYNm8E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

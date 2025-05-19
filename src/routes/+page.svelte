@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
+	import { FirebaseMessaging, type GetTokenResult } from '@capacitor-firebase/messaging';
 
-	let counter = $state(0);
+	let token: GetTokenResult | null = $state(null);
+
+	const getToken = async () => {
+		token = await FirebaseMessaging.getToken();
+		console.log(token.token);
+	};
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<Button onclick={getToken}>get token</Button>
 
-<div class="mx-auto h-screen w-full bg-red-400">
-	<span class="text-white">coucu</span>
-	<Button onclick={() => (counter += 1)}>Shadcn Click me {counter}</Button>
-</div>
+{token?.token}

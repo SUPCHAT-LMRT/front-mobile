@@ -1,2 +1,5 @@
 [tools]
 node = "22"
+
+[tasks.build-sync]
+run = "pnpm run build && pnpm exec cap sync"
