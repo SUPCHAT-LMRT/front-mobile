@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Chart from '$lib/components/ui/chart/index.js';
+	import * as Card from '$lib/components/ui/card';
+	import * as Chart from '$lib/components/ui/chart';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import { PieChart, Text } from 'layerchart';
 
