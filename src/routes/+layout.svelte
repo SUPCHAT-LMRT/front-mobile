@@ -4,12 +4,11 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import '../app.css';
-	import Chart1 from './Chart1.svelte';
 
 	let { children } = $props();
 </script>
 
-<Sidebar.Provider>
+<Sidebar.Provider class="py-safe">
 	<AppSidebar />
 	<Sidebar.Inset>
 		<header class="flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -29,7 +28,7 @@
 		</header>
 		<div class="flex flex-1 flex-col gap-4 p-4">
 			<div class="grid auto-rows-min gap-4 md:grid-cols-3">
-				<Chart1 />
+				{@render children()}
 				<!-- <div class="bg-muted/50 aspect-video rounded-xl"></div> -->
 				<div class="bg-muted/50 aspect-video rounded-xl"></div>
 				<div class="bg-muted/50 aspect-video rounded-xl"></div>
@@ -38,5 +37,3 @@
 		</div>
 	</Sidebar.Inset>
 </Sidebar.Provider>
-
-{@render children()}

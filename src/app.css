@@ -109,3 +109,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Safe area inset */
+@theme {
+  --sat: env(safe-area-inset-top);
+  --sab: env(safe-area-inset-bottom);
+}
+
+@utility pt-safe {
+  /* Only on mobile */
+  @media (max-width: 640px) {
+    padding-top: max(30px, var(--sat)); /* Define a minimum safe space by default */
+  }
+}
+
+@utility pb-safe {
+  /* Only on mobile */
+  @media (max-width: 640px) {
+    padding-bottom: max(30px, var(--sab)); /* Define a minimum safe space by default */
+  }
+}
