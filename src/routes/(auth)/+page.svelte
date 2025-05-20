@@ -1,18 +1,29 @@
 <script lang="ts">
+	import ModeButton from '$lib/components/buttons/ModeButton.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { FirebaseMessaging, type GetTokenResult } from '@capacitor-firebase/messaging';
+	import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 	import Chart1 from './Chart1.svelte';
 
-	let token: GetTokenResult | null = $state(null);
+	let token: string | null = $state(null);
 
 	const getToken = async () => {
-		token = await FirebaseMessaging.getToken();
-		console.log(token.token);
+		const resultToken = await FirebaseMessaging.getToken();
+		token = resultToken.token;
+		console.log(token);
 	};
 </script>
 
-<Button onclick={getToken}>get token</Button>
+<div class="mb-2 flex w-full justify-center gap-x-4">
+	<Button onclick={getToken}>get token</Button>
+	<ModeButton />
+</div>
 
-{token?.token}
+{#if token}
+	<p class="text-center text-sm text-slate-500 dark:text-slate-400">
+		Token: {token}
+	</p>
+{/if}
 
-<Chart1 />
+<div class="mt-4">
+	<Chart1 />
+</div>
