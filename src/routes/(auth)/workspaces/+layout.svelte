@@ -41,7 +41,7 @@
 			</Drawer.Header>
 
 			<a
-				href="/workspaces/workspace.id"
+				href="/workspaces/?workspaceId=workspace.id"
 				class="avatar-link flex h-full w-full items-center gap-x-4 px-4 pb-4"
 				onclick={() => (drawerOpen = false)}
 			>
