@@ -13,17 +13,19 @@
 	};
 </script>
 
-<div class="mb-2 flex w-full justify-center gap-x-4">
-	<Button onclick={getToken}>get token</Button>
-	<ModeButton />
-</div>
+<div class="pt-safe px-4">
+	<div class="mb-2 flex w-full justify-center gap-x-4">
+		<Button onclick={getToken}>get token</Button>
+		<ModeButton />
+	</div>
 
-{#if token}
-	<p class="text-center text-sm text-slate-500 dark:text-slate-400">
-		Token: {token}
-	</p>
-{/if}
+	{#if token}
+		<p class="text-center text-sm text-slate-500 dark:text-slate-400">
+			Token: {token}
+		</p>
+	{/if}
 
-<div class="mt-4">
-	<Chart1 />
+	<div class="mt-4">
+		<Chart1 />
+	</div>
 </div>

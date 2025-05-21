@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { Toaster } from '$lib/components/ui/sonner';
 	import { cn } from '$lib/utils';
 	import { Briefcase, House, MessageSquareMore, User, type IconProps } from '@lucide/svelte';
 	import { ModeWatcher } from 'mode-watcher';
@@ -9,8 +10,9 @@
 </script>
 
 <ModeWatcher />
+<Toaster position="top-center" />
 
-<div class="pt-safe px-4">
+<div>
 	{@render children()}
 </div>
 
