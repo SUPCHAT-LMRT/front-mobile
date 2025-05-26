@@ -21,4 +21,14 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+
+.idea
+package-lock.json
+pnpm-lock.json
+.svelte-kit
+/pnpm-lock.yaml
+/*.iml
+mise.*local.toml
+mise.*local.toml
 mise.*local.toml
