@@ -11,35 +11,35 @@
 </script>
 
 <div class="pt-safe px-4">
-	<div class="flex items-center justify-start gap-x-4">
-		<Drawer.Root bind:open={drawerOpen}>
-			<Drawer.Trigger class="flex items-center gap-x-4">
-				<Avatar.Root class="h-12 w-12 rounded-3xl transition-all hover:scale-105 hover:rounded-2xl">
-					<!-- {#key workspace} -->
-					<Avatar.Image
-						src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, 'workspace.id')}?v={Date.now()}"
-						alt="workspace.name"
-						class="h-full w-full object-cover"
-					/>
-					<!-- {/key} -->
+<div class="flex items-center justify-start gap-x-4">
+	<Drawer.Root bind:open={drawerOpen}>
+		<Drawer.Trigger class="flex items-center gap-x-4">
+			<Avatar.Root class="h-12 w-12 rounded-3xl transition-all hover:scale-105 hover:rounded-2xl">
+				<!-- {#key workspace} -->
+				<Avatar.Image
+					src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, 'workspace.id')}?v={Date.now()}"
+					alt="workspace.name"
+					class="h-full w-full object-cover"
+				/>
+				<!-- {/key} -->
 
-					<Avatar.Fallback class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl">
-						{fallbackAvatarLetters('workspace.name')}
-					</Avatar.Fallback>
-				</Avatar.Root>
-				<div class="flex flex-col">
-					<div class="flex items-center gap-x-3">
-						<span>workspace.name</span>
-						<ChevronsUpDown strokeWidth={2.5} size={16} />
-					</div>
-					<span class="text-muted-foreground">monadressemail@mail.com</span>
+				<Avatar.Fallback class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl">
+					{fallbackAvatarLetters('workspace.name')}
+				</Avatar.Fallback>
+			</Avatar.Root>
+			<div class="flex flex-col">
+				<div class="flex items-center gap-x-3">
+					<span>workspace.name</span>
+					<ChevronsUpDown strokeWidth={2.5} size={16} />
 				</div>
-			</Drawer.Trigger>
-			<Drawer.Content>
-				<Drawer.Header>
-					<Drawer.Title>Espaces de travail</Drawer.Title>
-					<Drawer.Description>monadressemail@mail.com</Drawer.Description>
-				</Drawer.Header>
+				<span class="text-muted-foreground">monadressemail@mail.com</span>
+			</div>
+		</Drawer.Trigger>
+		<Drawer.Content>
+			<Drawer.Header>
+				<Drawer.Title>Espaces de travail</Drawer.Title>
+				<Drawer.Description>monadressemail@mail.com</Drawer.Description>
+			</Drawer.Header>
 
 				<a
 					href="/workspaces/?workspaceId=workspace.id"
@@ -62,11 +62,11 @@
 						</Avatar.Fallback>
 					</Avatar.Root>
 
-					<div class="flex flex-col">
-						<span>workspace.name</span>
-						<span class="text-muted-foreground">jsp un texte</span>
-					</div>
-				</a>
+				<div class="flex flex-col">
+					<span>workspace.name</span>
+					<span class="text-muted-foreground">workspace.topic</span>
+				</div>
+			</a>
 
 				<Drawer.Footer class="flex w-full flex-1 flex-row gap-x-2">
 					<Button class="w-full shrink">Créer</Button>
