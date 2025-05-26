@@ -7,7 +7,7 @@
 
 <ModeWatcher />
 
-<div class="relative bg-left min-h-screen">
+<div class="relative bg-color min-h-screen dark:bg-color">
     {#if children}
         <div class="relative z-10">
             {@render children?.()}
@@ -16,10 +16,10 @@
 </div>
 
 <style lang="postcss">
-    .bg-left {
+    .bg-color {
         position: relative;
     }
-    .bg-left::before {
+    .bg-color::before {
         content: '';
         position: absolute;
         inset: 0;

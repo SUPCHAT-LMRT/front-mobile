@@ -43,7 +43,7 @@
 	});
 </script>
 
-<div class="container flex flex-col min-h-screen items-center justify-center z-10 dark:bg-gray-900">
+<div class="container flex flex-col min-h-screen items-center justify-center z-10">
 	<div class="px-12">
 		<div
 			class="mx-auto flex w-full flex-col justifier-center space-y-6 sm:w-[350px]"
