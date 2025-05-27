@@ -1,41 +1,68 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
-	import { getWorkspace, type Workspace } from '$lib/api/workspace/workspace';
+	import {
+		getWorkspace,
+		getWorkspaceChannels,
+		getWorkspacePrivateChannels,
+		type Channel,
+		type Workspace
+	} from '$lib/api/workspace/workspace';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import { error } from '$lib/toast/toast';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters';
-	import { Hash, Lock, Plus, Volume2 } from '@lucide/svelte';
+	import { Hash, Lock, Plus, User } from '@lucide/svelte';
 	import { Settings, UserPlus } from 'lucide-svelte';
 
-	const workspaceId: string = $derived(page.url.searchParams.get('workspaceId') || '');
+	const workspaceId: string = $derived(
+		page.url.searchParams.get('workspaceId') || localStorage.getItem('currentWorkspaceId') || ''
+	);
 	let workspace: Workspace | null = $state(null);
+	let publicChannels: Channel[] = $state([]);
+	let privateChannels: Channel[] = $state([]);
 
 	$effect(() => {
 		const fetchWorkspace = async () => {
-			if (workspaceId) {
-				try {
-					workspace = await getWorkspace(workspaceId);
-				} catch (e) {
-					console.error('Erreur lors de la récupération du workspace:', e);
-					error('Erreur', 'Impossible de récupérer les informations du workspace');
-					workspace = null;
-				}
+			if (!workspaceId) return;
+			try {
+				workspace = await getWorkspace(workspaceId);
+			} catch (e) {
+				console.error('Erreur lors de la récupération du workspace:', e);
+				error('Erreur', 'Impossible de récupérer les informations du workspace');
+				workspace = null;
+			}
+		};
+
+		const fetchWorkspaceChannels = async () => {
+			if (!workspaceId) return;
+			try {
+				publicChannels = await getWorkspaceChannels(workspaceId);
+			} catch (e) {
+				console.error('Erreur lors de la récupération des salons du workspace:', e);
+				error('Erreur', 'Impossible de récupérer les salons du workspace');
+				publicChannels = [];
+			}
+		};
+
+		const fetchWorkspacePrivateChannels = async () => {
+			if (!workspaceId) return;
+			try {
+				privateChannels = await getWorkspacePrivateChannels(workspaceId);
+			} catch (e) {
+				console.error('Erreur lors de la récupération des salons du workspace:', e);
+				error('Erreur', 'Impossible de récupérer les salons du workspace');
+				privateChannels = [];
 			}
 		};
 
 		fetchWorkspace();
-	});
+		fetchWorkspaceChannels();
+		fetchWorkspacePrivateChannels();
 
-	// Simulons des salons
-	const channels = $state([
-		{ id: '1', name: 'général', type: 'text' },
-		{ id: '2', name: 'annonces', type: 'text', private: true },
-		{ id: '3', name: 'salon-vocal', type: 'voice' },
-		{ id: '4', name: 'off-topic', type: 'text' }
-	]);
+		localStorage.setItem('currentWorkspaceId', workspaceId);
+	});
 </script>
 
 {#if workspace}
@@ -58,10 +85,8 @@
 				</div>
 			</div>
 
-			<div class="h-16"></div>
-
-			<div class="px-10">
-				<div class="mb-3 flex justify-between">
+			<div class="mt-12 flex flex-col gap-y-4 px-10">
+				<div class="mb-3 flex items-center justify-between">
 					<h1 class="text-2xl font-bold">{workspace.name}</h1>
 					<div class="flex gap-2">
 						<Button variant="outline" class="flex items-center gap-2">
@@ -79,40 +104,66 @@
 						</Button>
 					</div>
 				</div>
-			</div>
-		</div>
 
-		<div class="mx-auto mt-24 w-full max-w-4xl flex-1 p-6 px-10">
-			<div class="mb-4 flex items-center justify-between">
-				<div class="flex items-center gap-2">
-					<h2 class="text-xl font-semibold">Salons</h2>
-					<span class="text-muted-foreground text-sm">{channels.length}</span>
+				<div class="mx-auto w-full max-w-4xl flex-1">
+					<div class="mb-4 flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<h2 class="flex items-center gap-x-2 text-xl font-semibold">
+								<User size={14} class="text-muted-foreground ml-1" />
+								Salons publics
+							</h2>
+							<span class="text-muted-foreground ml-2 text-sm">{publicChannels.length}</span>
+						</div>
+
+						<Button variant="outline" size="sm" class="flex items-center gap-1">
+							<Plus size={16} />
+							<span>Créer un salon</span>
+						</Button>
+					</div>
+
+					<Separator class="mb-4" />
+
+					<div class="mt-2 space-y-1">
+						{#each publicChannels as channel}
+							<button
+								class="hover:bg-accent flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
+							>
+								<Hash size={18} class="text-primary" />
+								<span>{channel.name}</span>
+							</button>
+						{/each}
+					</div>
 				</div>
 
-				<Button variant="outline" size="sm" class="flex items-center gap-1">
-					<Plus size={16} />
-					<span>Créer un salon</span>
-				</Button>
-			</div>
+				<div class="mx-auto w-full max-w-4xl flex-1">
+					<div class="mb-4 flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<h2 class="flex items-center gap-x-2 text-xl font-semibold">
+								<Lock size={14} class="text-muted-foreground ml-1" />
+								Salons privé
+							</h2>
+							<span class="text-muted-foreground ml-2 text-sm">{privateChannels.length}</span>
+						</div>
 
-			<Separator class="mb-4" />
+						<Button variant="outline" size="sm" class="flex items-center gap-1">
+							<Plus size={16} />
+							<span>Créer un salon</span>
+						</Button>
+					</div>
 
-			<div class="mt-2 space-y-1">
-				{#each channels as channel}
-					<button
-						class="hover:bg-accent flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
-					>
-						{#if channel.type === 'text'}
-							<Hash size={18} class="text-primary" />
-						{:else}
-							<Volume2 size={18} class="text-primary" />
-						{/if}
-						<span>{channel.name}</span>
-						{#if channel.private}
-							<Lock size={14} class="text-muted-foreground ml-1" />
-						{/if}
-					</button>
-				{/each}
+					<Separator class="mb-4" />
+
+					<div class="mt-2 space-y-1">
+						{#each privateChannels as channel}
+							<button
+								class="hover:bg-accent flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
+							>
+								<Hash size={18} class="text-primary" />
+								<span>{channel.name}</span>
+							</button>
+						{/each}
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
