@@ -14,6 +14,7 @@
 	import { error } from '$lib/toast/toast';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters';
 	import { Hash, Lock, Plus, User } from '@lucide/svelte';
+	import { AxiosError } from 'axios';
 	import { Settings, UserPlus } from 'lucide-svelte';
 
 	const workspaceId: string = $derived(
@@ -29,6 +30,13 @@
 			try {
 				workspace = await getWorkspace(workspaceId);
 			} catch (e) {
+				if (e instanceof AxiosError) {
+					if (e.response?.status === 404) {
+						workspace = null;
+						localStorage;
+						return;
+					}
+				}
 				console.error('Erreur lors de la récupération du workspace:', e);
 				error('Erreur', 'Impossible de récupérer les informations du workspace');
 				workspace = null;
