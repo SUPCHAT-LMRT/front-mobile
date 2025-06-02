@@ -12,6 +12,7 @@
 	import { goto } from "$lib/utils/goto";
 	import preventDefault from "$lib/utils/preventDefault";
 	import { Loader } from "lucide-svelte";
+	import { fade } from 'svelte/transition';
 
 	let className: string | undefined | null = $state(undefined);
 	export { className as class };
@@ -112,7 +113,11 @@
 
 	<!-- Formulaire mail masqué tant que showEmailForm=false -->
 	{#if showEmailForm}
-		<form on:submit={preventDefault(onSubmit)} class="grid gap-6">
+		<form
+			on:submit={preventDefault(onSubmit)}
+			class="grid gap-6"
+			transition:fade
+		>
 			<div class="grid gap-2">
 				<Label class="sr-only" for="email">Email</Label>
 				<Input

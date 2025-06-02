@@ -38,6 +38,15 @@ importers:
       lucide-svelte:
         specifier: ^0.511.0
         version: 0.511.0(svelte@5.30.2)
+      runed:
+        specifier: ^0.28.0
+        version: 0.28.0(svelte@5.30.2)
+      svelte-easy-crop:
+        specifier: ^4.0.1
+        version: 4.0.1(svelte@5.30.2)
+      svelte-toolbelt:
+        specifier: ^0.9.1
+        version: 0.9.1(svelte@5.30.2)
     devDependencies:
       '@eslint/compat':
         specifier: ^1.2.5
@@ -52,8 +61,8 @@ importers:
         specifier: ^3.5.6
         version: 3.8.0
       '@lucide/svelte':
-        specifier: ^0.482.0
-        version: 0.482.0(svelte@5.30.2)
+        specifier: ^0.511.0
+        version: 0.511.0(svelte@5.30.2)
       '@neoconfetti/svelte':
         specifier: ^2.0.0
         version: 2.2.2(svelte@5.30.2)
@@ -85,8 +94,8 @@ importers:
         specifier: ^10.4.20
         version: 10.4.21(postcss@8.5.3)
       bits-ui:
-        specifier: 2.1.0
-        version: 2.1.0(@internationalized/date@3.8.0)(svelte@5.30.2)
+        specifier: 2.4.1
+        version: 2.4.1(@internationalized/date@3.8.0)(svelte@5.30.2)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -733,8 +742,8 @@ packages:
   '@layerstack/utils@1.1.0-next.2':
     resolution: {integrity: sha512-9Y4TOAE0iIVvnrf1mkft79rF/vTO84bZuc4hjhJB7XguFjy2f00pEfrDjF+IqleWImMFfRu31K2IMM6wRWEBXQ==}
 
-  '@lucide/svelte@0.482.0':
-    resolution: {integrity: sha512-n2ycHU9cNcleRDwwpEHBJ6pYzVhHIaL3a+9dQa8kns9hB2g05bY+v2p2KP8v0pZwtNhYTHk/F2o2uZ1bVtQGhw==}
+  '@lucide/svelte@0.511.0':
+    resolution: {integrity: sha512-aLCSPMUJmHlCuLXzXENXa4Z1NV2mN1iAZAFKk4bEbey+/MdsNlu+/DqwVkgW3Yvj6p8y8Vn5xZ2v9CLmPlA6Vw==}
     peerDependencies:
       svelte: ^5
 
@@ -1178,8 +1187,8 @@ packages:
     resolution: {integrity: sha512-QxD8cf2eVqJOOz63z6JIN9BzvVs/dlySa5HGSBH5xtR8dPteIRQnBxxKqkNTiT6jbDTF6jAfrd4oMcND9RGbQg==}
     engines: {node: '>=0.6'}
 
-  bits-ui@2.1.0:
-    resolution: {integrity: sha512-hDYT8NCzKbqPhm7E6af5ZfSOPV6JZ5F/a2X1I5x0Jxn11y4Ts7ufw8sdVE0rNpF+cyLnx/96+048jAY37FepOw==}
+  bits-ui@2.4.1:
+    resolution: {integrity: sha512-Z0qZkPgtxP5dkEOyZqCK2PQ1oFXsD0AlfFMtsrMLJqaYtjUBoQGosHVKEH03M9q4G8kxVnG74Zb0F9pS0X4+6w==}
     engines: {node: '>=20', pnpm: '>=8.7.0'}
     peerDependencies:
       '@internationalized/date': ^3.8.1
@@ -2367,6 +2376,11 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
 
+  svelte-easy-crop@4.0.1:
+    resolution: {integrity: sha512-0k7vVpHVLrPyobSXqey5IJUmFVxOoCaQrobFEsFXpSCyK8N5jTkRj1VX6NuCOZK8XXcMAqUvV0MktB8D5x1oCw==}
+    peerDependencies:
+      svelte: ^5.0.0
+
   svelte-eslint-parser@1.2.0:
     resolution: {integrity: sha512-mbPtajIeuiyU80BEyGvwAktBeTX7KCr5/0l+uRGLq1dafwRNrjfM5kHGJScEBlPG3ipu6dJqfW/k0/fujvIEVw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -2387,8 +2401,8 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
-  svelte-toolbelt@0.8.2:
-    resolution: {integrity: sha512-qoQYJYkLlz/31EcpbZFk+2vp4qKJn9aM7iO2JvBnzaJD/fTmMtbrP9gwzgnvn/Y8miJFCnsF6CZ5zsHC2d/p/A==}
+  svelte-toolbelt@0.9.1:
+    resolution: {integrity: sha512-wBX6MtYw/kpht80j5zLpxJyR9soLizXPIAIWEVd9llAi17SR44ZdG291bldjB7r/K5duC0opDFcuhk2cA1hb8g==}
     engines: {node: '>=18', pnpm: '>=8.7.0'}
     peerDependencies:
       svelte: ^5.30.2
@@ -3328,7 +3342,7 @@ snapshots:
       date-fns: 4.1.0
       lodash-es: 4.17.21
 
-  '@lucide/svelte@0.482.0(svelte@5.30.2)':
+  '@lucide/svelte@0.511.0(svelte@5.30.2)':
     dependencies:
       svelte: 5.30.2
 
@@ -3739,7 +3753,7 @@ snapshots:
 
   big-integer@1.6.52: {}
 
-  bits-ui@2.1.0(@internationalized/date@3.8.0)(svelte@5.30.2):
+  bits-ui@2.4.1(@internationalized/date@3.8.0)(svelte@5.30.2):
     dependencies:
       '@floating-ui/core': 1.7.0
       '@floating-ui/dom': 1.7.0
@@ -3748,7 +3762,7 @@ snapshots:
       esm-env: 1.2.2
       runed: 0.28.0(svelte@5.30.2)
       svelte: 5.30.2
-      svelte-toolbelt: 0.8.2(svelte@5.30.2)
+      svelte-toolbelt: 0.9.1(svelte@5.30.2)
       tabbable: 6.2.0
 
   bplist-parser@0.3.2:
@@ -4885,6 +4899,10 @@ snapshots:
     transitivePeerDependencies:
       - picomatch
 
+  svelte-easy-crop@4.0.1(svelte@5.30.2):
+    dependencies:
+      svelte: 5.30.2
+
   svelte-eslint-parser@1.2.0(svelte@5.30.2):
     dependencies:
       eslint-scope: 8.3.0
@@ -4908,7 +4926,7 @@ snapshots:
       style-to-object: 1.0.8
       svelte: 5.30.2
 
-  svelte-toolbelt@0.8.2(svelte@5.30.2):
+  svelte-toolbelt@0.9.1(svelte@5.30.2):
     dependencies:
       clsx: 2.1.1
       runed: 0.28.0(svelte@5.30.2)

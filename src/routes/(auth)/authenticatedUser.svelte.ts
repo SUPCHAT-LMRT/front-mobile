@@ -4,4 +4,4 @@ export type AuthenticatedUserState = {
 	user: User | null;
 }
 
-export const authenticatedUserState: { user: User } = $state({ user: null });
+export const authenticatedUserState: { user: null } = $state({ user: null });
