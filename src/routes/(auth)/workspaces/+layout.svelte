@@ -1,16 +1,33 @@
 <script lang="ts">
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
-	import { listUserWorkspaces, type Workspace } from '$lib/api/workspace/workspace';
+	import {
+		createWorkspace,
+		listUserWorkspaces,
+		updateWorkspaceIcon,
+		WorkspaceType,
+		type Workspace
+	} from '$lib/api/workspace/workspace';
 	import * as Avatar from '$lib/components/ui/avatar';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Drawer from '$lib/components/ui/drawer';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import * as RadioGroup from '$lib/components/ui/radio-group';
 	import { error } from '$lib/toast/toast';
+	import { cn } from '$lib/utils';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters';
-	import { ChevronsUpDown } from '@lucide/svelte';
+	import { ChevronsUpDown, Globe } from '@lucide/svelte';
 
 	const { children } = $props();
 	let drawerOpen = $state(false);
 	let workspaces: Workspace[] = $state([]);
+	let showInput = $state(false);
+	let workspaceName = $state('');
+	let workspaceIconImage: File | undefined = $state(undefined);
+	let type: WorkspaceType = $state(WorkspaceType.PRIVATE);
+	let isLoading = $state(true);
+	let dialogOpen = $state(false);
 
 	$effect(() => {
 		const fetchWorkspaces = async () => {
@@ -24,6 +41,32 @@
 
 		fetchWorkspaces();
 	});
+
+	$effect(() => {
+		if (!dialogOpen) {
+			showInput = false;
+			workspaceName = '';
+			workspaceIconImage = undefined;
+			type = WorkspaceType.PRIVATE;
+		}
+	});
+
+	async function createNewWorkspace() {
+		try {
+			const workspace = await createWorkspace(workspaceName, type);
+			if (workspaceIconImage) {
+				await updateWorkspaceIcon(workspace.id, workspaceIconImage);
+			}
+			workspaces.push(workspace);
+			workspaceIconImage = undefined;
+			workspaceName = '';
+			type = WorkspaceType.PRIVATE;
+			showInput = false;
+			dialogOpen = false;
+		} catch (error) {
+			console.error('Erreur lors de la création du workspace :', error);
+		}
+	}
 </script>
 
 <div class="flex flex-col gap-y-4">
@@ -92,7 +135,101 @@
 					{/each}
 
 					<Drawer.Footer class="flex w-full flex-1 flex-row gap-x-2">
-						<Button class="w-full shrink">Créer</Button>
+						<Dialog.Root bind:open={dialogOpen}>
+							<Dialog.Trigger class={cn(buttonVariants(), 'w-full max-w-full shrink')}
+								>Créer</Dialog.Trigger
+							>
+							<Dialog.Content>
+								<Dialog.Header
+									class="relative flex h-full flex-col items-center justify-center text-center"
+								>
+									<div class="text-center">
+										<Dialog.Title class="text-2xl font-bold">
+											Crée ton espace de travail
+										</Dialog.Title>
+										<p class="mt-2 text-sm text-gray-700">
+											Ton espace de travail est l&apos;endroit où tu retrouves tes amis. Crée le
+											tien et lance une discussion.
+										</p>
+									</div>
+								</Dialog.Header>
+
+								<div class="mt-4 space-y-4">
+									{#if !showInput}
+										<Button
+											variant="outline"
+											class="h-16 w-full justify-between border hover:bg-gray-200"
+											onclick={() => (showInput = true)}
+										>
+											<div class="flex items-center gap-3">
+												<div class="rounded-full p-2">
+													<Globe class="h-6 w-6" />
+												</div>
+												<span class="font-medium">Créer le mien</span>
+											</div>
+											<div class="text-gray-400">→</div>
+										</Button>
+									{:else}
+										<div class="w-full">
+											<Input
+												class="mb-4 w-full rounded-md border p-2"
+												placeholder="Nom de l'espace de travail"
+												bind:value={workspaceName}
+											/>
+											<div class="grid w-full max-w-sm items-center gap-1.5">
+												<Input
+													onchange={({ currentTarget }) => {
+														workspaceIconImage = currentTarget.files?.[0];
+													}}
+													id="picture"
+													type="file"
+													accept="image/png, image/jpeg, image/webp"
+												/>
+											</div>
+											<RadioGroup.Root bind:value={type} class="pt-4">
+												<div class="flex items-center space-x-2">
+													<RadioGroup.Item value="PRIVATE" id="r1" />
+													<Label for="r1">Privé</Label>
+												</div>
+												<div class="flex items-center space-x-2">
+													<RadioGroup.Item value="PUBLIC" id="r2" />
+													<Label for="r2">Public</Label>
+												</div>
+											</RadioGroup.Root>
+										</div>
+									{/if}
+
+									<div class="flex justify-between gap-x-4 pt-4">
+										{#if showInput}
+											<Button
+												variant="ghost"
+												class="h-10 w-max justify-start"
+												onclick={() => (showInput = false)}
+											>
+												<div class="text-gray-400">&larr;</div>
+												Retour
+											</Button>
+
+											<div class="float-end">
+												<Button
+													onclick={createNewWorkspace}
+													class="bg-primary h-10 w-full justify-center px-6 text-white"
+												>
+													Créer un espace de travail
+												</Button>
+											</div>
+										{:else}
+											<div class="w-full">
+												<p class="mb-2 text-sm text-gray-500">Tu as déjà une invitation ?</p>
+												<Button class="h-10 w-full justify-center">
+													Rejoindre un espace de travail
+												</Button>
+											</div>
+										{/if}
+									</div>
+								</div>
+							</Dialog.Content>
+						</Dialog.Root>
 						<Button variant="outline" class="w-full shrink" href="/discover">Décrouvrir</Button>
 					</Drawer.Footer>
 				</Drawer.Content>
