@@ -127,14 +127,16 @@
 					</div>
 				{/each}
 
-				<div class="mt-4 flex gap-2">
+				<div class="flex w-full flex-row gap-x-2">
 					<Button
 						onclick={() => (step = 1)}
-						class="w-full bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+						class="w-full shrink bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
 					>
 						Retour
 					</Button>
-					<Button onclick={handleFinalCreate} class="bg-primary w-full text-white">Créer</Button>
+					<Button onclick={handleFinalCreate} class="bg-primary w-full shrink text-white"
+						>Créer</Button
+					>
 				</div>
 			</div>
 		{/if}

@@ -1,6 +1,5 @@
 import { PUBLIC_API_ORIGIN } from "$env/static/public";
 import axios from "axios";
-import { env } from "$env/dynamic/public";
 import { refreshAccessToken } from "./user";
 
 export const baseClient = axios.create({

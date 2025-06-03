@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
 	import {
-		getWorkspaceChannels,
-		getWorkspacePrivateChannels,
-		type Channel,
-		type Workspace
-	} from '$lib/api/workspace/workspace';
+		createWorkspaceChannel,
+		listWorkspaceChannels,
+		listWorkspacePrivateChannels
+	} from '$lib/api/workspace/channels';
+	import { type Channel, type Workspace } from '$lib/api/workspace/workspace';
+	import CreateChannelDialog from '$lib/components/app/workspace/CreateChannelDialog.svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
@@ -19,12 +20,19 @@
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 	let publicChannels: Channel[] = $state([]);
 	let privateChannels: Channel[] = $state([]);
+	let createChannelData = $state({
+		dialogOpen: false,
+		name: '',
+		topic: '',
+		isPrivate: false,
+		members: [] as string[]
+	});
 
 	$effect(() => {
 		const fetchWorkspaceChannels = async () => {
 			if (!workspace?.id) return;
 			try {
-				publicChannels = await getWorkspaceChannels(workspace.id);
+				publicChannels = await listWorkspaceChannels(workspace.id);
 			} catch (e) {
 				if (e instanceof AxiosError) {
 					if (e.response?.status === 404) {
@@ -40,7 +48,7 @@
 		const fetchWorkspacePrivateChannels = async () => {
 			if (!workspace?.id) return;
 			try {
-				privateChannels = await getWorkspacePrivateChannels(workspace.id);
+				privateChannels = await listWorkspacePrivateChannels(workspace.id);
 			} catch (e) {
 				if (e instanceof AxiosError) {
 					if (e.response?.status === 404) {
@@ -56,6 +64,34 @@
 		fetchWorkspaceChannels();
 		fetchWorkspacePrivateChannels();
 	});
+
+	const createChannel = async () => {
+		if (!workspace?.id) {
+			error('Erreur', 'Aucun workspace sélectionné');
+			return;
+		}
+
+		try {
+			await createWorkspaceChannel(
+				workspace.id,
+				createChannelData.name,
+				createChannelData.topic,
+				createChannelData.isPrivate,
+				createChannelData.members
+			);
+			createChannelData = {
+				dialogOpen: false,
+				name: '',
+				topic: '',
+				isPrivate: false,
+				members: []
+			};
+		} catch (e) {
+			if (e instanceof AxiosError) {
+				error('Erreur', e.response?.data?.displayError);
+			}
+		}
+	};
 </script>
 
 {#if workspace}
@@ -110,22 +146,32 @@
 							<span class="text-muted-foreground ml-2 text-sm">{publicChannels.length}</span>
 						</div>
 
-						<Button variant="outline" size="sm" class="flex items-center gap-1">
+						<Button
+							variant="outline"
+							size="sm"
+							class="flex items-center gap-1"
+							onclick={() => {
+								createChannelData.dialogOpen = true;
+								createChannelData.isPrivate = false;
+								createChannelData.members = [];
+							}}
+						>
 							<Plus size={16} />
 							<span>Créer un salon</span>
 						</Button>
 					</div>
 
-					<Separator class="mb-4" />
+					<Separator class="mb-2" />
 
-					<div class="mt-2 space-y-1">
+					<div class="space-y-1">
 						{#each publicChannels as channel}
-							<button
-								class="hover:bg-accent flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
+							<a
+								href="/channels?workspaceId={workspace.id}&channelId={channel.id}"
+								class="hover:bg-accent flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
 							>
-								<Hash size={18} class="text-primary" />
+								<Hash size={18} class="text-primary -translate-y-0.5" />
 								<span>{channel.name}</span>
-							</button>
+							</a>
 						{/each}
 					</div>
 				</div>
@@ -140,15 +186,23 @@
 							<span class="text-muted-foreground ml-2 text-sm">{privateChannels.length}</span>
 						</div>
 
-						<Button variant="outline" size="sm" class="flex items-center gap-1">
-							<Plus size={16} />
+						<Button
+							variant="outline"
+							size="sm"
+							class="flex items-center gap-1"
+							onclick={() => {
+								createChannelData.dialogOpen = true;
+								createChannelData.isPrivate = true;
+							}}
+						>
+							<Plus size={18} class="text-primary" />
 							<span>Créer un salon</span>
 						</Button>
 					</div>
 
-					<Separator class="mb-4" />
+					<Separator class="mb-2" />
 
-					<div class="mt-2 space-y-1">
+					<div class="space-y-1">
 						{#each privateChannels as channel}
 							<button
 								class="hover:bg-accent flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
@@ -156,10 +210,14 @@
 								<Hash size={18} class="text-primary" />
 								<span>{channel.name}</span>
 							</button>
+						{:else}
+							<p class="text-muted-foreground">Aucun salon privé disponible</p>
 						{/each}
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<CreateChannelDialog {createChannelData} {createChannel} workspaceId={workspace.id} />
 {/if}
