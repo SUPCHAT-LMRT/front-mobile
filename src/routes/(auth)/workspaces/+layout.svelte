@@ -104,9 +104,7 @@
 			<Drawer.Root bind:open={drawerOpen}>
 				<Drawer.Trigger class="flex items-center gap-x-4">
 					{#if workspace}
-						<Avatar.Root
-							class="h-12 w-12 rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
-						>
+						<Avatar.Root class="size-12 rounded-3xl bg-gray-200">
 							{#key workspace}
 								<Avatar.Image
 									src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)}?v={Date.now()}"
@@ -134,7 +132,7 @@
 						</div>
 					{/if}
 				</Drawer.Trigger>
-				<Drawer.Content>
+				<Drawer.Content class="min-h-[96%]">
 					<Drawer.Header>
 						<Drawer.Title>Espaces de travail</Drawer.Title>
 						<Drawer.Description>{authenticatedUserState.user.email}</Drawer.Description>

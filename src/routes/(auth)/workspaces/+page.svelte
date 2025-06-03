@@ -70,7 +70,7 @@
 			<div class="absolute -bottom-12 flex w-full items-center justify-between px-6">
 				<div class="flex items-center gap-4">
 					{#key workspace}
-						<Avatar.Root class="border-background h-24 w-24 border-4 shadow-sm">
+						<Avatar.Root class="border-background size-24 border-4 bg-gray-200 shadow-sm">
 							<Avatar.Image src={getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)} />
 							<Avatar.Fallback class="bg-primary rounded-full text-white">
 								{fallbackAvatarLetters(workspace.name)}

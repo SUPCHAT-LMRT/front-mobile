@@ -12,7 +12,7 @@
 <ModeWatcher />
 <Toaster position="top-center" />
 
-<div>
+<div data-vaul-drawer-wrapper>
 	{@render children()}
 </div>
 
