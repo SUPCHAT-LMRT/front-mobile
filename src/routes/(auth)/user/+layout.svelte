@@ -27,7 +27,7 @@
     let { children } = $props();
 </script>
 
-<section class="ml-15 border-l-2 border-gray-200 dark:border-gray-800 dark:bg-gray-800 w-full">
+<section>
         <div class="flex flex-col px-4 py-2">
             <section>
                 <div class="flex items-end mb-4">

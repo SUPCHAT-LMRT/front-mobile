@@ -2,13 +2,15 @@
     import {getS3ObjectUrl, S3Bucket} from "$lib/api/s3";
     import {PrivateStatus, type User, updateUserAvatar} from "$lib/api/user";
     import * as Avatar from "$lib/components/ui/avatar";
-    import {Button} from "$lib/components/ui/button";
     import {Card} from "$lib/components/ui/card";
+    import { Button } from "$lib/components/ui/button/index.js";
+    import { Input } from "$lib/components/ui/input/index.js";
     import {cn} from "$lib/utils";
     import {fallbackAvatarLetters} from "$lib/utils/fallbackAvatarLetters.js";
     import * as ImageCropper from '$lib/components/extra/ui/image-cropper';
     import {getFileFromUrl} from '$lib/components/extra/ui/image-cropper';
     import {error, success} from "$lib/toast/toast";
+    import { fade } from 'svelte/transition';
 
     const {authenticatedUser}: { authenticatedUser: User } = $props();
     let forceRenderAvatar = $state(Date.now());
@@ -31,10 +33,17 @@
         const file = await getFileFromUrl(url);
         await updateAvatar(file);
     };
+
+    let showEditName = $state(false);
+    let showEditEmail = $state(false);
+
+    let firstName = $state(authenticatedUser.firstName);
+    let lastName = $state(authenticatedUser.lastName);
+    let email = $state(authenticatedUser.email);
 </script>
 
 <section class="py-2 pt-8">
-    <div class="mx-auto w-[600px]">
+    <div class="mx-auto">
         <div class="relative">
             <div class="h-28 bg-blue-100 rounded-t-lg"></div>
 
@@ -94,42 +103,63 @@
         <Card
                 class="mt-16 bg-white border border-gray-200 text-gray-800 p-6 shadow-sm max-w-3xl mx-auto"
         >
-            <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <div class="text-sm font-medium text-gray-500 uppercase">
-                            prénom nom
-                        </div>
+            <div class="space-y-6">
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center">
                         <div>
-                            {authenticatedUser.firstName}
-                            {authenticatedUser.lastName}
+                            <div class="text-sm font-medium text-gray-500 uppercase">prénom nom</div>
+                            <div>{firstName} {lastName}</div>
                         </div>
+                        <Button
+                          class="text-gray-500 hover:text-gray-700 transition-transform duration-300"
+                          onclick={() => (showEditName = !showEditName)}
+                        >
+                            <span class={`inline-block transform transition-transform duration-300 ${showEditName ? 'rotate-90' : ''}`}>▶</span>
+                        </Button>
                     </div>
-                    <Button
-                            variant="secondary"
-                            class="bg-gray-200 hover:bg-gray-300 text-gray-700"
-                            size="sm"
-                    >
-                        Modifier
-                    </Button>
+
+                    {#if showEditName}
+                        <div class="mt-2 space-y-2" transition:fade>
+                            <Input
+                              type="text"
+                              bind:value={firstName}
+                              placeholder="Prénom"
+                              class="w-full border border-gray-300 rounded px-3 py-1"
+                            />
+                            <Input
+                              type="text"
+                              bind:value={lastName}
+                              placeholder="Nom"
+                              class="w-full border border-gray-300 rounded px-3 py-1"
+                            />
+                        </div>
+                    {/if}
                 </div>
 
-                <div class="flex justify-between items-center">
-                    <div>
-                        <div class="text-sm font-medium text-gray-500 uppercase">
-                            E-MAIL
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-medium text-gray-500 uppercase">E-MAIL</div>
+                            <div>{email}</div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span>{authenticatedUser.email}</span>
-                        </div>
+                        <Button
+                          class="text-gray-500 hover:text-gray-700 transition-transform duration-300"
+                          onclick={() => (showEditEmail = !showEditEmail)}
+                        >
+                            <span class={`inline-block transform transition-transform duration-300 ${showEditEmail ? 'rotate-90' : ''}`}>▶</span>
+                        </Button>
                     </div>
-                    <Button
-                            variant="secondary"
-                            class="bg-gray-200 hover:bg-gray-300 text-gray-700"
-                            size="sm"
-                    >
-                        Modifier
-                    </Button>
+
+                    {#if showEditEmail}
+                        <div class="mt-2" transition:fade>
+                            <Input
+                              type="email"
+                              bind:value={email}
+                              placeholder="Email"
+                              class="w-full border border-gray-300 rounded px-3 py-1"
+                            />
+                        </div>
+                    {/if}
                 </div>
             </div>
         </Card>

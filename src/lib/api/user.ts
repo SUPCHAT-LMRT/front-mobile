@@ -18,6 +18,15 @@ export enum PrivateStatus {
     OFFLINE = "offline",
 }
 
+export const statusMap = {
+    [PrivateStatus.UNKNOWN]: "Inconnu",
+    [PrivateStatus.ONLINE]: "En ligne",
+    [PrivateStatus.DO_NOT_DISTURB]: "Ne pas déranger",
+    [PrivateStatus.AWAY]: "Absent",
+    [PrivateStatus.INVISIBLE]: "Invisible",
+    [PrivateStatus.OFFLINE]: "Hors ligne",
+}
+
 export type User = {
     id: string;
     email: string;

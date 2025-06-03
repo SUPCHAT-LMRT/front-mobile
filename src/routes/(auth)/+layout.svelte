@@ -5,7 +5,22 @@
 	import { Briefcase, House, MessageSquareMore, User, type IconProps } from '@lucide/svelte';
 	import { ModeWatcher } from 'mode-watcher';
 	import type { Component } from 'svelte';
+	import * as Drawer from "$lib/components/ui/drawer/index.js";
+	import { Button } from '$lib/components/ui/button';
+	import Header from "$lib/components/app/drawer-profile/Header.svelte";
+	import Content from "$lib/components/app/drawer-profile/Content.svelte";
+	import ContentUser from "$lib/components/app/drawer-profile/ContentUser.svelte";
 
+	import type {AuthenticatedUserState} from "./authenticatedUser.svelte";
+	import { statusMap } from '$lib/api/user';
+
+	const {authenticatedUserState} = page.data as {
+		authenticatedUserState: AuthenticatedUserState;
+	};
+	const authenticatedUser = $derived(authenticatedUserState.user);
+
+	let firstName = $state(authenticatedUser.firstName);
+	let lastName = $state(authenticatedUser.lastName);
 	let { children } = $props();
 </script>
 
@@ -23,7 +38,7 @@
 		{@render navigationIcon(House, '/')}
 		{@render navigationIcon(MessageSquareMore, '/chat')}
 		{@render navigationIcon(Briefcase, '/workspaces')}
-		{@render navigationIcon(User, '/user')}
+		{@render drawer()}
 	</div>
 </div>
 
@@ -36,4 +51,44 @@
 			strokeWidth={page.url.pathname === path ? 2.8 : 2}
 		/>
 	</a>
+{/snippet}
+
+{#snippet drawer()}
+	<Drawer.Root shouldScaleBackground={true}>
+		<Drawer.Trigger><User /></Drawer.Trigger>
+		<Drawer.Portal>
+			<Drawer.Overlay class="fixed inset-0 bg-black/40" >
+				<Drawer.Content class="min-h-[96%]">
+					<Drawer.Header>
+						<div class="flex items-center gap-2">
+							<Drawer.Title><Header {authenticatedUser} /></Drawer.Title>
+							<Drawer.Description class="flex flex-col gap-1">
+								<Drawer.NestedRoot setBackgroundColorOnScale={false}>
+									<Drawer.Trigger>
+										<div class="text-lg font-semibold">{firstName} {lastName}</div>
+									</Drawer.Trigger>
+									<Drawer.Portal>
+										<Drawer.Overlay class="fixed inset-0 bg-black/40" />
+										<Drawer.Content
+											class="fixed right-0 bottom-0 left-0 mt-24 flex h-full max-h-[96%] flex-col rounded-t-[10px]">
+											<ContentUser {authenticatedUser} />
+										</Drawer.Content>
+									</Drawer.Portal>
+								</Drawer.NestedRoot>
+
+								<div class="text-sm text-slate-500 dark:text-slate-400">
+									{statusMap[authenticatedUser.status]}
+								</div>
+							</Drawer.Description>
+						</div>
+					</Drawer.Header>
+					<Content />
+					<Drawer.Footer>
+						<Button>Submit</Button>
+						<Drawer.Close>Cancel</Drawer.Close>
+					</Drawer.Footer>
+				</Drawer.Content>
+			</Drawer.Overlay>
+		</Drawer.Portal>
+	</Drawer.Root>
 {/snippet}
