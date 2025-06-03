@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
 	import {
-		getWorkspace,
 		getWorkspaceChannels,
 		getWorkspacePrivateChannels,
 		type Channel,
@@ -16,38 +14,23 @@
 	import { Hash, Lock, Plus, User } from '@lucide/svelte';
 	import { AxiosError } from 'axios';
 	import { Settings, UserPlus } from 'lucide-svelte';
+	import { currentWorkspaceState } from './currentWorkspace.svelte';
 
-	const workspaceId: string = $derived(
-		page.url.searchParams.get('workspaceId') || localStorage.getItem('currentWorkspaceId') || ''
-	);
-	let workspace: Workspace | null = $state(null);
+	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 	let publicChannels: Channel[] = $state([]);
 	let privateChannels: Channel[] = $state([]);
 
 	$effect(() => {
-		const fetchWorkspace = async () => {
-			if (!workspaceId) return;
+		const fetchWorkspaceChannels = async () => {
+			if (!workspace?.id) return;
 			try {
-				workspace = await getWorkspace(workspaceId);
+				publicChannels = await getWorkspaceChannels(workspace.id);
 			} catch (e) {
 				if (e instanceof AxiosError) {
 					if (e.response?.status === 404) {
-						workspace = null;
-						localStorage;
 						return;
 					}
 				}
-				console.error('Erreur lors de la récupération du workspace:', e);
-				error('Erreur', 'Impossible de récupérer les informations du workspace');
-				workspace = null;
-			}
-		};
-
-		const fetchWorkspaceChannels = async () => {
-			if (!workspaceId) return;
-			try {
-				publicChannels = await getWorkspaceChannels(workspaceId);
-			} catch (e) {
 				console.error('Erreur lors de la récupération des salons du workspace:', e);
 				error('Erreur', 'Impossible de récupérer les salons du workspace');
 				publicChannels = [];
@@ -55,21 +38,23 @@
 		};
 
 		const fetchWorkspacePrivateChannels = async () => {
-			if (!workspaceId) return;
+			if (!workspace?.id) return;
 			try {
-				privateChannels = await getWorkspacePrivateChannels(workspaceId);
+				privateChannels = await getWorkspacePrivateChannels(workspace.id);
 			} catch (e) {
+				if (e instanceof AxiosError) {
+					if (e.response?.status === 404) {
+						return;
+					}
+				}
 				console.error('Erreur lors de la récupération des salons du workspace:', e);
 				error('Erreur', 'Impossible de récupérer les salons du workspace');
 				privateChannels = [];
 			}
 		};
 
-		fetchWorkspace();
 		fetchWorkspaceChannels();
 		fetchWorkspacePrivateChannels();
-
-		localStorage.setItem('currentWorkspaceId', workspaceId);
 	});
 </script>
 
@@ -84,12 +69,14 @@
 
 			<div class="absolute -bottom-12 flex w-full items-center justify-between px-6">
 				<div class="flex items-center gap-4">
-					<Avatar.Root class="border-background h-24 w-24 border-4 shadow-sm">
-						<Avatar.Image src={getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)} />
-						<Avatar.Fallback class="bg-primary rounded-full text-white">
-							{fallbackAvatarLetters(workspace.name)}
-						</Avatar.Fallback>
-					</Avatar.Root>
+					{#key workspace}
+						<Avatar.Root class="border-background h-24 w-24 border-4 shadow-sm">
+							<Avatar.Image src={getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)} />
+							<Avatar.Fallback class="bg-primary rounded-full text-white">
+								{fallbackAvatarLetters(workspace.name)}
+							</Avatar.Fallback>
+						</Avatar.Root>
+					{/key}
 				</div>
 			</div>
 

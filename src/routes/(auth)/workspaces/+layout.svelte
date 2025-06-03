@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
 	import {
 		createWorkspace,
+		getWorkspace,
 		listUserWorkspaces,
 		updateWorkspaceIcon,
 		WorkspaceType,
@@ -18,15 +20,24 @@
 	import { cn } from '$lib/utils';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters';
 	import { ChevronsUpDown, Globe } from '@lucide/svelte';
+	import { AxiosError } from 'axios';
+	import type { AuthenticatedUserState } from '../authenticatedUser.svelte';
+	import { currentWorkspaceState } from './currentWorkspace.svelte';
 
 	const { children } = $props();
+	const { authenticatedUserState } = page.data as {
+		authenticatedUserState: AuthenticatedUserState;
+	};
+
+	const workspaceId: string = $derived(page.url.searchParams.get('workspaceId') || '');
+	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
+
 	let drawerOpen = $state(false);
 	let workspaces: Workspace[] = $state([]);
 	let showInput = $state(false);
 	let workspaceName = $state('');
 	let workspaceIconImage: File | undefined = $state(undefined);
 	let type: WorkspaceType = $state(WorkspaceType.PRIVATE);
-	let isLoading = $state(true);
 	let dialogOpen = $state(false);
 
 	$effect(() => {
@@ -39,7 +50,25 @@
 			}
 		};
 
+		const fetchCurrentWorkspace = async () => {
+			if (!workspaceId) return;
+			try {
+				currentWorkspaceState.workspace = await getWorkspace(workspaceId);
+			} catch (e) {
+				if (e instanceof AxiosError) {
+					if (e.response?.status === 404) {
+						workspace = null;
+						return;
+					}
+				}
+				console.error('Erreur lors de la récupération du workspace:', e);
+				error('Erreur', 'Impossible de récupérer les informations du workspace');
+				workspace = null;
+			}
+		};
+
 		fetchWorkspaces();
+		fetchCurrentWorkspace();
 	});
 
 	$effect(() => {
@@ -74,64 +103,83 @@
 		<div class="flex items-center justify-start gap-x-4">
 			<Drawer.Root bind:open={drawerOpen}>
 				<Drawer.Trigger class="flex items-center gap-x-4">
-					<Avatar.Root
-						class="h-12 w-12 rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
-					>
-						<!-- {#key workspace} -->
-						<Avatar.Image
-							src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, 'workspace.id')}?v={Date.now()}"
-							alt="workspace.name"
-							class="h-full w-full object-cover"
-						/>
-						<!-- {/key} -->
+					{#if workspace}
+						<Avatar.Root
+							class="h-12 w-12 rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
+						>
+							{#key workspace}
+								<Avatar.Image
+									src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)}?v={Date.now()}"
+									alt={workspace.name}
+									class="h-full w-full object-cover"
+								/>
+							{/key}
 
-						<Avatar.Fallback class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl">
-							{fallbackAvatarLetters('workspace.name')}
-						</Avatar.Fallback>
-					</Avatar.Root>
-					<div class="flex flex-col">
+							<Avatar.Fallback class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl">
+								{fallbackAvatarLetters(workspace.name)}
+							</Avatar.Fallback>
+						</Avatar.Root>
+						<div class="flex flex-col">
+							<div class="flex items-center">
+								<span>{workspace.name}</span>
+								<ChevronsUpDown strokeWidth={2.5} size={16} />
+							</div>
+							<span class="text-muted-foreground">{authenticatedUserState.user.email}</span>
+						</div>
+					{:else}
+						<Globe strokeWidth={2.5} size={16} />
 						<div class="flex items-center gap-x-3">
-							<span>workspace.name</span>
+							<span>Choisir un espace de travail</span>
 							<ChevronsUpDown strokeWidth={2.5} size={16} />
 						</div>
-						<span class="text-muted-foreground">monadressemail@mail.com</span>
-					</div>
+					{/if}
 				</Drawer.Trigger>
 				<Drawer.Content>
 					<Drawer.Header>
 						<Drawer.Title>Espaces de travail</Drawer.Title>
-						<Drawer.Description>monadressemail@mail.com</Drawer.Description>
+						<Drawer.Description>{authenticatedUserState.user.email}</Drawer.Description>
 					</Drawer.Header>
 
-					{#each workspaces as workspace (workspace.id)}
-						<a
-							href="/workspaces/?workspaceId={workspace.id}"
-							class="avatar-link flex h-full w-full items-center gap-x-4 px-4 pb-4"
-							onclick={() => (drawerOpen = false)}
-						>
-							<Avatar.Root
-								class="h-12 w-12 rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
+					{#each workspaces as iteratedWorkspace (iteratedWorkspace.id)}
+						<div class="flex w-full justify-between">
+							<a
+								href="/workspaces/?workspaceId={iteratedWorkspace.id}"
+								class="avatar-link flex h-full w-full items-center gap-x-4 px-4 pb-4"
+								onclick={() => (drawerOpen = false)}
 							>
-								{#key workspace}
-									<Avatar.Image
-										src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)}?v={Date.now()}"
-										alt={workspace.name}
-										class="h-full w-full object-cover"
-									/>
-								{/key}
-
-								<Avatar.Fallback
-									class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
+								<Avatar.Root
+									class="h-12 w-12 rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
 								>
-									{fallbackAvatarLetters(workspace.name)}
-								</Avatar.Fallback>
-							</Avatar.Root>
+									{#key iteratedWorkspace}
+										<Avatar.Image
+											src="{getS3ObjectUrl(
+												S3Bucket.WORKSPACES_ICONS,
+												iteratedWorkspace.id
+											)}?v={Date.now()}"
+											alt={iteratedWorkspace.name}
+											class="h-full w-full object-cover"
+										/>
+									{/key}
 
-							<div class="flex flex-col">
-								<span>{workspace.name}</span>
-								<span class="text-muted-foreground">{workspace.topic}</span>
-							</div>
-						</a>
+									<Avatar.Fallback
+										class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
+									>
+										{fallbackAvatarLetters(iteratedWorkspace.name)}
+									</Avatar.Fallback>
+								</Avatar.Root>
+
+								<div class="flex flex-col">
+									<span>{iteratedWorkspace.name}</span>
+									<span class="text-muted-foreground">{iteratedWorkspace.topic}</span>
+								</div>
+							</a>
+
+							{#if workspace?.id === iteratedWorkspace.id}
+								<div class="flex -translate-y-2 items-center justify-center px-4">
+									<div class="bg-primary size-2 rounded-full"></div>
+								</div>
+							{/if}
+						</div>
 					{/each}
 
 					<Drawer.Footer class="flex w-full flex-1 flex-row gap-x-2">
