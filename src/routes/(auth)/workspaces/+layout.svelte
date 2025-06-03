@@ -138,49 +138,51 @@
 						<Drawer.Description>{authenticatedUserState.user.email}</Drawer.Description>
 					</Drawer.Header>
 
-					{#each workspaces as iteratedWorkspace (iteratedWorkspace.id)}
-						<div class="flex w-full justify-between">
-							<a
-								href="/workspaces/?workspaceId={iteratedWorkspace.id}"
-								class="avatar-link flex h-full w-full items-center gap-x-4 px-4 pb-4"
-								onclick={() => (drawerOpen = false)}
-							>
-								<Avatar.Root
-									class="h-12 w-12 rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
+					<div class="overflow-auto">
+						{#each workspaces as iteratedWorkspace (iteratedWorkspace.id)}
+							<div class="flex w-full justify-between">
+								<a
+									href="/workspaces/?workspaceId={iteratedWorkspace.id}"
+									class="avatar-link flex h-full w-full items-center gap-x-4 px-4 pb-4"
+									onclick={() => (drawerOpen = false)}
 								>
-									{#key iteratedWorkspace}
-										<Avatar.Image
-											src="{getS3ObjectUrl(
-												S3Bucket.WORKSPACES_ICONS,
-												iteratedWorkspace.id
-											)}?v={Date.now()}"
-											alt={iteratedWorkspace.name}
-											class="h-full w-full object-cover"
-										/>
-									{/key}
-
-									<Avatar.Fallback
-										class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
+									<Avatar.Root
+										class="h-12 w-12 rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
 									>
-										{fallbackAvatarLetters(iteratedWorkspace.name)}
-									</Avatar.Fallback>
-								</Avatar.Root>
+										{#key iteratedWorkspace}
+											<Avatar.Image
+												src="{getS3ObjectUrl(
+													S3Bucket.WORKSPACES_ICONS,
+													iteratedWorkspace.id
+												)}?v={Date.now()}"
+												alt={iteratedWorkspace.name}
+												class="h-full w-full object-cover"
+											/>
+										{/key}
 
-								<div class="flex flex-col">
-									<span>{iteratedWorkspace.name}</span>
-									<span class="text-muted-foreground">{iteratedWorkspace.topic}</span>
-								</div>
-							</a>
+										<Avatar.Fallback
+											class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
+										>
+											{fallbackAvatarLetters(iteratedWorkspace.name)}
+										</Avatar.Fallback>
+									</Avatar.Root>
 
-							{#if workspace?.id === iteratedWorkspace.id}
-								<div class="flex -translate-y-2 items-center justify-center px-4">
-									<div class="bg-primary size-2 rounded-full"></div>
-								</div>
-							{/if}
-						</div>
-					{/each}
+									<div class="flex flex-col">
+										<span>{iteratedWorkspace.name}</span>
+										<span class="text-muted-foreground">{iteratedWorkspace.topic}</span>
+									</div>
+								</a>
 
-					<Drawer.Footer class="flex w-full flex-1 flex-row gap-x-2">
+								{#if workspace?.id === iteratedWorkspace.id}
+									<div class="flex -translate-y-2 items-center justify-center px-4">
+										<div class="bg-primary size-2 rounded-full"></div>
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+
+					<Drawer.Footer class="flex w-full flex-row gap-x-2">
 						<Dialog.Root bind:open={dialogOpen}>
 							<Dialog.Trigger class={cn(buttonVariants(), 'w-full max-w-full shrink')}
 								>Créer</Dialog.Trigger
