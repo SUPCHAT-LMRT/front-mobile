@@ -6,6 +6,7 @@
 		listWorkspacePrivateChannels
 	} from '$lib/api/workspace/channels';
 	import { type Channel, type Workspace } from '$lib/api/workspace/workspace';
+	import ws from '$lib/api/ws';
 	import CreateChannelDialog from '$lib/components/app/workspace/CreateChannelDialog.svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Button } from '$lib/components/ui/button';
@@ -92,6 +93,34 @@
 			}
 		}
 	};
+
+	// $effect to send the selectWorkspace message to the server when the workspace changes
+	$effect(() => {
+		if (!workspace) return;
+		ws.selectWorkspace(workspace.id);
+
+		return () => {
+			ws.unselectWorkspace();
+		};
+	});
+
+	$effect(() => {
+		if (!workspace) return;
+		// Subscribe to channel updates
+		const unsubscribeChannelCreated = ws.subscribe('channel-created', (msg) => {
+			const channelCreated = msg.channel as Channel;
+			if (channelCreated.workspaceId !== workspace.id) return; // This is not supposed to happen but just in case (because it's handled by the server)
+			if (channelCreated.isPrivate) {
+				privateChannels.push(channelCreated);
+			} else {
+				publicChannels.push(channelCreated);
+			}
+		});
+
+		return () => {
+			unsubscribeChannelCreated();
+		};
+	});
 </script>
 
 {#if workspace}

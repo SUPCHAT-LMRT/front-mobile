@@ -1,7 +1,7 @@
 import type { User } from "$lib/api/user";
 
 export type AuthenticatedUserState = {
-	user: User | null;
+	user: User;
 }
 
-export const authenticatedUserState: { user: User | null } = $state({ user: null });
+export let authenticatedUserState: { user: User | null } = $state({ user: null });

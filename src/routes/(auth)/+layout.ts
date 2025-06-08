@@ -10,8 +10,9 @@ export const load: LayoutLoad = async (): Promise<{ authenticatedUserState: Auth
 	} catch (error) {
 		console.error("Erreur lors de la vérification de l'utilisateur :", error);
 	}
+	const state = authenticatedUserState as AuthenticatedUserState;
 
-	if (!authenticatedUserState.user) {
+	if (!state.user) {
 		goto("/login");
 	}
 
@@ -19,13 +20,13 @@ export const load: LayoutLoad = async (): Promise<{ authenticatedUserState: Auth
 		"self-status-updated",
 		(msg: { status: PrivateStatus }) => {
 			// Update the status of the authenticated user in the store
-			(authenticatedUserState.user as User).status = msg.status;
+			(state.user as User).status = msg.status;
 		},
 	);
 
 	ws.initWebSocket(); // Connect to the WebSocket server
 
 	return {
-		authenticatedUserState,
+		authenticatedUserState: state,
 	};
 };

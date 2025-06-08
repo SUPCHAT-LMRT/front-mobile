@@ -17,10 +17,9 @@
 	const { authenticatedUserState } = page.data as {
 		authenticatedUserState: AuthenticatedUserState;
 	};
-	const authenticatedUser = $derived(authenticatedUserState.user);
 
-	let firstName = $derived(authenticatedUser.firstName);
-	let lastName = $derived(authenticatedUser.lastName);
+	let firstName = $derived(authenticatedUserState.user.firstName);
+	let lastName = $derived(authenticatedUserState.user.lastName);
 	let { children } = $props();
 </script>
 
@@ -61,7 +60,8 @@
 				<Drawer.Content class="min-h-[96%]">
 					<Drawer.Header>
 						<div class="flex items-center gap-2">
-							<Drawer.Title><Header {authenticatedUser} /></Drawer.Title>
+							<Drawer.Title><Header authenticatedUser={authenticatedUserState.user} /></Drawer.Title
+							>
 							<Drawer.Description class="flex flex-col gap-1">
 								<Drawer.NestedRoot setBackgroundColorOnScale={false}>
 									<Drawer.Trigger>
@@ -72,13 +72,13 @@
 										<Drawer.Content
 											class="fixed right-0 bottom-0 left-0 mt-24 flex h-full max-h-[96%] flex-col rounded-t-[10px]"
 										>
-											<ContentUser {authenticatedUser} />
+											<ContentUser authenticatedUser={authenticatedUserState.user} />
 										</Drawer.Content>
 									</Drawer.Portal>
 								</Drawer.NestedRoot>
 
 								<div class="text-sm text-slate-500 dark:text-slate-400">
-									{statusMap[authenticatedUser.status]}
+									{statusMap[authenticatedUserState.user.status]}
 								</div>
 							</Drawer.Description>
 						</div>
