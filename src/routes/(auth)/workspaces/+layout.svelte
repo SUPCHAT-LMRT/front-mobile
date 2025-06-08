@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
+	import type { User } from '$lib/api/user';
 	import {
 		createWorkspace,
 		getWorkspace,
@@ -28,6 +29,7 @@
 	const { authenticatedUserState } = page.data as {
 		authenticatedUserState: AuthenticatedUserState;
 	};
+	const authenticatedUser: User = $derived(authenticatedUserState.user);
 
 	const workspaceId: string = $derived(page.url.searchParams.get('workspaceId') || '');
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
@@ -122,7 +124,7 @@
 								<span>{workspace.name}</span>
 								<ChevronsUpDown strokeWidth={2.5} size={16} />
 							</div>
-							<span class="text-muted-foreground">{authenticatedUserState.user.email}</span>
+							<span class="text-muted-foreground">{authenticatedUser.email}</span>
 						</div>
 					{:else}
 						<Globe strokeWidth={2.5} size={16} />
@@ -135,7 +137,7 @@
 				<Drawer.Content class="min-h-[96%]">
 					<Drawer.Header>
 						<Drawer.Title>Espaces de travail</Drawer.Title>
-						<Drawer.Description>{authenticatedUserState.user.email}</Drawer.Description>
+						<Drawer.Description>{authenticatedUser.email}</Drawer.Description>
 					</Drawer.Header>
 
 					<div class="overflow-auto">
