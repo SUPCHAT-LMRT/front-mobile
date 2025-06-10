@@ -1,56 +1,77 @@
 <script lang="ts">
-	import {Button} from "$lib/components/ui/button";
-	import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "$lib/components/ui/card";
-	import {onMount} from "svelte";
-	import {getWorkspaceMembers, kickWorkspaceMember} from "$lib/api/workspace/workspace";
-	import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "$lib/components/ui/table";
+	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
+	import type { WorkspaceMember } from '$lib/api/workspace/member';
+	import { checkRolePermission, RolePermission } from '$lib/api/workspace/roles';
+	import {
+		getWorkspaceMembers,
+		kickWorkspaceMember,
+		type Workspace
+	} from '$lib/api/workspace/workspace';
+	import InviteMemberDialog from '$lib/components/app/workspace/InviteMemberDialog.svelte';
+	import * as Avatar from '$lib/components/ui/avatar';
+	import { Button } from '$lib/components/ui/button';
+	import {
+		Card,
+		CardContent,
+		CardDescription,
+		CardHeader,
+		CardTitle
+	} from '$lib/components/ui/card';
 	import {
 		DropdownMenu,
 		DropdownMenuContent,
 		DropdownMenuItem,
 		DropdownMenuTrigger
-	} from "$lib/components/ui/dropdown-menu";
-	import {AlertTriangle, MoreHorizontal, UserMinus} from "lucide-svelte";
-	import {page} from "$app/state";
-	import {checkRolePermission, RolePermission} from "$lib/api/workspace/roles";
-	import {getS3ObjectUrl, S3Bucket} from "$lib/api/s3";
-	import {fallbackAvatarLetters} from "$lib/utils/fallbackAvatarLetters.js";
-	import * as Avatar from "$lib/components/ui/avatar";
-	import InviteMemberDialog from '$lib/components/app/workspace/InviteMemberDialog.svelte';
+	} from '$lib/components/ui/dropdown-menu';
+	import {
+		Table,
+		TableBody,
+		TableCell,
+		TableHead,
+		TableHeader,
+		TableRow
+	} from '$lib/components/ui/table';
+	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters.js';
+	import { AlertTriangle, MoreHorizontal, UserMinus } from 'lucide-svelte';
 
-	const {workspaceId} = page.params;
-	let members = $state([]);
-	let hasPermission = $state(false);
-	let forceRenderAvatar = $state(Date.now());
+	const { workspace }: { workspace: Workspace } = $props();
 
-	onMount(async () => {
+	let members: WorkspaceMember[] = $state([]);
+	let hasPermission = $derived.by(async () => {
+		if (!workspace) return false;
+
 		try {
-			const data = await getWorkspaceMembers(workspaceId, 1, 100);
-			members = data.members;
-		} catch (error) {
-			console.error("Erreur lors de la récupération des membres :", error);
-		}
-	});
-
-	onMount(async () => {
-		try {
-			const {hasPermission: canManageSettings} = await checkRolePermission(
-				workspaceId,
+			const { hasPermission: canManageMembers } = await checkRolePermission(
+				workspace.id,
 				RolePermission.KICK_MEMBERS.permissionBit
 			);
-			hasPermission = canManageSettings;
+			return canManageMembers;
 		} catch (err) {
-			console.error("Erreur lors de la vérification des permissions :", err);
-			hasPermission = false;
+			console.error('Erreur lors de la vérification des permissions :', err);
+			return false;
 		}
+	});
+	let forceRenderAvatar = $state(Date.now());
+
+	$effect(() => {
+		const fetchMembers = async () => {
+			try {
+				const data = await getWorkspaceMembers(workspace.id, 1, 100);
+				members = data.members;
+			} catch (error) {
+				console.error('Erreur lors de la récupération des membres :', error);
+			}
+		};
+
+		fetchMembers();
 	});
 
 	const handleRemoveMember = async (memberId: string) => {
 		try {
-			await kickWorkspaceMember(workspaceId, memberId);
-			members = members.filter(member => member.id !== memberId);
+			await kickWorkspaceMember(workspace.id, memberId);
+			members = members.filter((member) => member.id !== memberId);
 		} catch (error) {
-			console.error("Erreur lors de la suppression du membre :", error);
+			console.error('Erreur lors de la suppression du membre :', error);
 		}
 	};
 </script>
@@ -61,13 +82,12 @@
 			<div class="flex">
 				<AlertTriangle class="h-5 w-5 text-red-800 dark:text-red-500" />
 				<div class="ml-3">
-					<h3 class="text-sm font-medium text-red-800 dark:text-red-500">
-						Accès refusé
-					</h3>
+					<h3 class="text-sm font-medium text-red-800 dark:text-red-500">Accès refusé</h3>
 					<div class="mt-2 text-sm text-red-700 dark:text-red-400">
 						<p>
-							Vous n'avez pas les permissions nécessaires pour gérer les membres de cet espace de travail.
-							<br>
+							Vous n'avez pas les permissions nécessaires pour gérer les membres de cet espace de
+							travail.
+							<br />
 							Veuillez contacter un administrateur si vous pensez qu'il s'agit d'une erreur.
 						</p>
 					</div>
@@ -77,10 +97,10 @@
 	</div>
 {:else}
 	<div class="space-y-6">
-		<div class="flex justify-between items-center">
+		<div class="flex items-center justify-between">
 			<h2 class="text-xl font-semibold">Gestion des Membres</h2>
 			<Button class="text-white">
-				<InviteMemberDialog workspaceId={workspaceId} />
+				<InviteMemberDialog workspaceId={workspace.id} />
 			</Button>
 		</div>
 
@@ -93,14 +113,19 @@
 				<!-- Vue mobile : cartes empilées -->
 				<div class="flex flex-col gap-4 sm:hidden">
 					{#each members as member}
-						<div class="flex items-center justify-between rounded-lg border p-4 shadow-sm bg-background">
+						<div
+							class="bg-background flex items-center justify-between rounded-lg border p-4 shadow-sm"
+						>
 							<div class="flex items-center gap-4">
 								<Avatar.Root class="h-12 w-12">
 									<Avatar.Image
-										src={`${getS3ObjectUrl(S3Bucket.USERS_AVATARS, member.userId)}?${forceRenderAvatar}`} />
+										src={`${getS3ObjectUrl(S3Bucket.USERS_AVATARS, member.userId)}?${forceRenderAvatar}`}
+									/>
 									<Avatar.Fallback>
-										<div class="flex items-center justify-center w-full h-full bg-gray-200 text-gray-500 text-lg font-bold rounded-full">
-											{fallbackAvatarLetters(member.firstName + " " + member.lastName)}
+										<div
+											class="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-lg font-bold text-gray-500"
+										>
+											{fallbackAvatarLetters(member.pseudo)}
 										</div>
 									</Avatar.Fallback>
 								</Avatar.Root>
@@ -142,10 +167,13 @@
 									<TableCell class="w-24">
 										<Avatar.Root>
 											<Avatar.Image
-												src={`${getS3ObjectUrl(S3Bucket.USERS_AVATARS, member.userId)}?${forceRenderAvatar}`} />
+												src={`${getS3ObjectUrl(S3Bucket.USERS_AVATARS, member.userId)}?${forceRenderAvatar}`}
+											/>
 											<Avatar.Fallback>
-												<div class="flex items-center justify-center w-full h-full bg-gray-200 text-gray-500 text-2xl font-bold rounded-full">
-													{fallbackAvatarLetters(member.firstName + " " + member.lastName)}
+												<div
+													class="flex h-full w-full items-center justify-center rounded-full bg-gray-200 text-2xl font-bold text-gray-500"
+												>
+													{fallbackAvatarLetters(member.pseudo)}
 												</div>
 											</Avatar.Fallback>
 										</Avatar.Root>

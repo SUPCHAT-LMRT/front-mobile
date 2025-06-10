@@ -1,13 +1,16 @@
-<script>
+<script lang="ts">
+	import type { Workspace } from '$lib/api/workspace/workspace';
+	import Confidentiality from '$lib/components/app/workspace/workspaceSettings/confidentiality/Confidentiality.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Drawer from '$lib/components/ui/drawer/index.js';
-	import Confidentiality from '$lib/components/app/workspace/workspaceSettings/confidentiality/Confidentiality.svelte';
+
+	const { workspace }: { workspace: Workspace } = $props();
 </script>
 
 <Drawer.Root shouldScaleBackground={true}>
 	<Drawer.Trigger>
 		<Button
-			class="w-full py-4 mb-4 bg-primary/90 text-white hover:bg-primary transition-all duration-300 text-base font-medium rounded-lg shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+			class="bg-primary/90 hover:bg-primary mb-4 flex w-full items-center justify-center gap-2 rounded-lg py-4 text-base font-medium text-white shadow-sm transition-all duration-300 hover:shadow-md"
 		>
 			Confidentialité
 		</Button>
@@ -32,7 +35,7 @@
 					</div>
 				</Drawer.Header>
 				<div class="px-5">
-					<Confidentiality  />
+					<Confidentiality {workspace} />
 				</div>
 			</Drawer.Content>
 		</Drawer.Overlay>
