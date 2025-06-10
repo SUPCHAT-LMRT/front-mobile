@@ -4,15 +4,16 @@
 	import { type Channel, type Workspace } from '$lib/api/workspace/workspace';
 	import { error } from '$lib/toast/toast';
 	import { ChevronLeft } from '@lucide/svelte';
-	import { currentWorkspaceState } from '../workspaces/currentWorkspace.svelte';
+	import { currentWorkspaceState } from '../currentWorkspace.svelte';
 
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 	let channelId: string = $derived(page.url.searchParams.get('channelId') || '');
 	let channel: Channel | null = $state(null);
 
 	$effect(() => {
+		if (!workspace?.id || !channelId) return;
+
 		const fetchChannel = async () => {
-			if (!workspace?.id || !channelId) return;
 			try {
 				channel = await getWorkspaceChannel(workspace.id, channelId);
 			} catch (e) {

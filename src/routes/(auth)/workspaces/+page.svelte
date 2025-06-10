@@ -172,7 +172,6 @@
 								<User size={14} class="text-muted-foreground ml-1" />
 								Salons publics
 							</h2>
-							<span class="text-muted-foreground ml-2 text-sm">{publicChannels.length}</span>
 						</div>
 
 						<Button
@@ -195,12 +194,14 @@
 					<div class="space-y-1">
 						{#each publicChannels as channel}
 							<a
-								href="/channels?workspaceId={workspace.id}&channelId={channel.id}"
+								href="/workspaces/channels?workspaceId={workspace.id}&channelId={channel.id}"
 								class="hover:bg-accent flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
 							>
 								<Hash size={18} class="text-primary translate-y-0.5" />
 								<span>{channel.name}</span>
 							</a>
+						{:else}
+							<p class="text-muted-foreground">Aucun salon public disponible</p>
 						{/each}
 					</div>
 				</div>
@@ -212,7 +213,6 @@
 								<Lock size={14} class="text-muted-foreground ml-1" />
 								Salons privé
 							</h2>
-							<span class="text-muted-foreground ml-2 text-sm">{privateChannels.length}</span>
 						</div>
 
 						<Button
