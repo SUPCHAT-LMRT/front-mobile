@@ -17,6 +17,7 @@
 	import { AxiosError } from 'axios';
 	import { Settings, UserPlus } from 'lucide-svelte';
 	import { currentWorkspaceState } from './currentWorkspace.svelte';
+	import InviteMemberDialog from '$lib/components/app/workspace/InviteMemberDialog.svelte';
 
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 	let publicChannels: Channel[] = $state([]);
@@ -151,11 +152,10 @@
 					<div class="flex gap-2">
 						<Button variant="outline" class="flex items-center gap-2">
 							<UserPlus size={18} />
-							<span class="hidden sm:inline">Inviter un membre</span>
-							<span class="inline sm:hidden">Inviter</span>
+							<span class="inline sm:hidden"><InviteMemberDialog workspaceId={workspace.id} /></span>
 						</Button>
 						<Button
-							href="/workspaces/settings?workspaceId={workspace.id}"
+							href="/workspaces/{workspace.id}/settings"
 							variant="outline"
 							class="flex items-center gap-2"
 						>
@@ -240,7 +240,7 @@
 								<span>{channel.name}</span>
 							</button>
 						{:else}
-							<p class="text-muted-foreground">Aucun salon privé disponible</p>
+							<p class="text-muted-foreground">Aucun salon disponible</p>
 						{/each}
 					</div>
 				</div>

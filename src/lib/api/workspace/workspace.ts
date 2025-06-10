@@ -1,4 +1,5 @@
 import { baseClient } from "../client";
+import type { WorkspaceRole } from '$lib/api/workspace/roles';
 
 export enum WorkspaceType {
 	PUBLIC = "PUBLIC",
@@ -22,6 +23,13 @@ export type Channel = {
 	order: number;
 };
 
+export type WorkspaceMember = {
+	id: string;
+	userId: string;
+	pseudo: string;
+	roles: WorkspaceRole[];
+};
+
 export const listUserWorkspaces = async (): Promise<Workspace[]> => {
 	try {
 		const { data } = await baseClient.get("/api/workspaces");
@@ -35,6 +43,22 @@ export const listUserWorkspaces = async (): Promise<Workspace[]> => {
 export const getWorkspace = async (workspaceId: string): Promise<Workspace> => {
 	try {
 		const { data } = await baseClient.get(`/api/workspaces/${workspaceId}`);
+		return data;
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+}
+
+export const updateTypeWorkspace = async (
+	workspaceId: string,
+	type: WorkspaceType,
+): Promise<Workspace> => {
+	try {
+		const { data } = await baseClient.put(
+			`/api/workspaces/${workspaceId}/type`,
+			{ type },
+		);
 		return data;
 	} catch (e) {
 		console.error(e);
@@ -75,6 +99,71 @@ export const updateWorkspaceIcon = async (
 				},
 			},
 		);
+		return data;
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+};
+
+export const updateWorkspace = async (
+	workspaceId: string,
+	name: string,
+	topic: string,
+): Promise<Workspace> => {
+	try {
+		const { data } = await baseClient.put(`/api/workspaces/${workspaceId}`, {
+			name,
+			topic,
+		});
+		return data;
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+};
+
+export const getWorkspaceMembers = async (
+	workspaceId: string,
+	page: number,
+	limit: number,
+): Promise<{ members: WorkspaceMember[]; total: number }> => {
+	try {
+		const { data } = await baseClient.get(
+			`/api/workspaces/${workspaceId}/members`,
+			{
+				params: { page, limit },
+			},
+		);
+		return data;
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+};
+
+export const kickWorkspaceMember = async (
+	workspaceId: string,
+	userId: string,
+): Promise<void> => {
+	try {
+		await baseClient.delete(
+			`/api/workspaces/${workspaceId}/members/${userId}`,
+		);
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+};
+
+
+export const createWorkspaceInviteLink = async (
+	workspaceId: string,
+): Promise<string> => {
+	try {
+		const { data } = await baseClient.post(`/api/workspace-invite-link/create/${workspaceId}`, {
+			workspaceId,
+		});
 		return data;
 	} catch (e) {
 		console.error(e);
