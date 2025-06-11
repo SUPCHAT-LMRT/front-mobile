@@ -1,28 +1,22 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import {
-		type DirectMessage,
-		getDirectMessages
-	} from '$lib/api/direct/message.js';
+	import { type DirectMessage, getDirectMessages } from '$lib/api/direct/message.js';
 	import { RoomKind } from '$lib/api/room';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
-	import {
-		getUserProfile,
-		PublicStatus,
-		type UserProfile
-	} from '$lib/api/user';
+	import { getUserProfile, PublicStatus, type UserProfile } from '$lib/api/user';
 	import ws from '$lib/api/ws';
 	import '$lib/assets/styles/chats.scss';
+	import * as Avatar from '$lib/components/ui/avatar';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import * as ContextMenu from '$lib/components/ui/context-menu';
 	import { cn } from '$lib/utils';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters.js';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { scrollToBottom } from '$lib/utils/scrollToBottom';
 	import NumberFlow from '@number-flow/svelte';
 	import { ChevronLeft, Languages, Pen, Send, Trash2 } from 'lucide-svelte';
-	import type { AuthenticatedUserState } from '../../authenticatedUser.svelte.js';
 	import { onDestroy, tick } from 'svelte';
-	import * as Avatar from '$lib/components/ui/avatar';
-	import * as ContextMenu from '$lib/components/ui/context-menu';
+	import type { AuthenticatedUserState } from '../../authenticatedUser.svelte.js';
 
 	const { authenticatedUserState } = page.data as {
 		authenticatedUserState: AuthenticatedUserState;
@@ -30,50 +24,46 @@
 
 	const authenticatedUser = $derived(authenticatedUserState.user);
 
-	const aroundMessageId = $derived(
-		page.url.searchParams.get('aroundMessageId')
-	);
+	const aroundMessageId = $derived(page.url.searchParams.get('aroundMessageId') ?? undefined);
 
 	// the chatId is the userId of the other user
 	let currentChatId: string = $derived(page.url.searchParams.get('chatId') || '');
-	let otherUserProfile: UserProfile = $state(null);
+	let otherUserProfile: UserProfile | null = $state(null);
 	let currentMessage = $state('');
 	let currentRoom: { id: string | null; messages: DirectMessage[] } = $state({
 		id: null,
 		messages: []
 	});
 
-	let unsubscribeSendMessage = null;
-	let unsubscribeMessageReactionAdded = null;
-	let unsubscribeMessageReactionRemoved = null;
-	let unsubscribeUserStatusUpdated = null;
-	let inputElement: HTMLDivElement = $state(null);
-	let elementsList: HTMLDivElement = $state(null);
+	let unsubscribeSendMessage: (() => void) | null = null;
+	let unsubscribeMessageReactionAdded: (() => void) | null = null;
+	let unsubscribeMessageReactionRemoved: (() => void) | null = null;
+	let unsubscribeUserStatusUpdated: (() => void) | null = null;
+	let inputElement: HTMLDivElement | null = $state(null);
+	let elementsList: HTMLDivElement | null = $state(null);
 	let isAutoScrolling = $state(false);
 
 	// Ces deux références DOM serviront de sentinelles
-	let topSentinel: HTMLDivElement = $state(null);
-	let bottomSentinel: HTMLDivElement = $state(null);
+	let topSentinel: HTMLDivElement | null = $state(null);
+	let bottomSentinel: HTMLDivElement | null = $state(null);
 
 	// Observers pour le haut et le bas
-	let topObserver: IntersectionObserver = $state(null);
-	let bottomObserver: IntersectionObserver = $state(null);
+	let topObserver: IntersectionObserver | null = $state(null);
+	let bottomObserver: IntersectionObserver | null = $state(null);
 
 	const LIMIT_LOAD = 50;
 	const MAX_MESSAGES = 75;
 
 	$effect(() => {
 		joinRoomAndListenMessages(currentChatId);
-		getUserProfile(currentChatId).then(
-			(userProfile) => (otherUserProfile = userProfile)
-		);
+		getUserProfile(currentChatId).then((userProfile) => (otherUserProfile = userProfile));
 
 		return () => {
 			unsubscribeSendMessage?.();
 			unsubscribeMessageReactionAdded?.();
 			unsubscribeMessageReactionRemoved?.();
 			unsubscribeUserStatusUpdated?.();
-			ws.leaveRoom(currentRoom.id);
+			ws.leaveRoom(currentRoom.id!);
 			currentRoom.id = null;
 			currentRoom.messages = [];
 		};
@@ -88,16 +78,13 @@
 			currentRoom.messages = currentRoom.messages.sort(
 				(a, b) => a.createdAt.getTime() - b.createdAt.getTime()
 			);
-			const joinedRoom = await ws.asyncDirectJoinRoom(
-				otherUserId,
-				RoomKind.DIRECT
-			);
+			const joinedRoom = await ws.asyncDirectJoinRoom(otherUserId, RoomKind.DIRECT);
 			currentRoom.id = joinedRoom.roomId;
 
 			await tick();
 			if (aroundMessageId) {
 				const aroundMessageElement = document.querySelector(
-					'[data-message-id=\'' + aroundMessageId + '\']'
+					"[data-message-id='" + aroundMessageId + "']"
 				);
 				if (aroundMessageElement) {
 					aroundMessageElement.scrollIntoView({ block: 'center' });
@@ -137,96 +124,72 @@
 				bottomObserver.observe(bottomSentinel);
 			}
 
-			unsubscribeSendMessage = ws.subscribe(
-				'send-direct-message',
-				async (msg) => {
-					currentRoom.messages.push({
-						id: msg.messageId,
-						content: msg.content,
-						author: {
-							userId: msg.sender.userId,
-							firstName: msg.sender.firstName,
-							lastName: msg.sender.lastName
-						},
-						createdAt: new Date(msg.createdAt),
-						reactions: []
-					});
+			unsubscribeSendMessage = ws.subscribe('send-direct-message', async (msg) => {
+				currentRoom.messages.push({
+					id: msg.messageId,
+					content: msg.content,
+					author: {
+						userId: msg.sender.userId,
+						firstName: msg.sender.firstName,
+						lastName: msg.sender.lastName
+					},
+					createdAt: new Date(msg.createdAt),
+					reactions: []
+				});
 
-					await tick();
-					await scrollToBottomSafe(elementsList);
-				}
-			);
+				await tick();
+				await scrollToBottomSafe(elementsList);
+			});
 
 			// Added is triggered when a user adds a reaction to a message,
 			// If the reaction already exists, just update the usernames array with the new user, else add the reaction to the message
-			unsubscribeMessageReactionAdded = ws.subscribe(
-				'direct-message-reaction-added',
-				(msg) => {
-					const message = currentRoom.messages.find(
-						(m) => m.id === msg.messageId
-					);
-					if (message) {
-						const reaction = message.reactions.find(
-							(r) => r.reaction === msg.reaction
-						);
-						if (reaction) {
-							reaction.users = [
-								...reaction.users,
-								{ id: msg.member.userId, name: msg.member.username }
-							];
-						} else {
-							message.reactions = [
-								...message.reactions,
-								{
-									reaction: msg.reaction,
-									users: [{ id: msg.member.userId, name: msg.member.username }]
-								}
-							];
-						}
+			unsubscribeMessageReactionAdded = ws.subscribe('direct-message-reaction-added', (msg) => {
+				const message = currentRoom.messages.find((m) => m.id === msg.messageId);
+				if (message) {
+					const reaction = message.reactions.find((r) => r.reaction === msg.reaction);
+					if (reaction) {
+						reaction.users = [
+							...reaction.users,
+							{ id: msg.member.userId, name: msg.member.username }
+						];
+					} else {
+						message.reactions = [
+							...message.reactions,
+							{
+								reaction: msg.reaction,
+								users: [{ id: msg.member.userId, name: msg.member.username }]
+							}
+						];
 					}
 				}
-			);
+			});
 
 			// Removed is triggered when a user removes a reaction from a message,
 			// If the reaction exists, remove the user from the usernames array, if the usernames array is empty, remove the reaction from the message
-			unsubscribeMessageReactionRemoved = ws.subscribe(
-				'direct-message-reaction-removed',
-				(msg) => {
-					const message = currentRoom.messages.find(
-						(m) => m.id === msg.messageId
-					);
-					if (message) {
-						const reaction = message.reactions.find(
-							(r) => r.reaction === msg.reaction
-						);
-						if (reaction) {
-							reaction.users = reaction.users.filter(
-								({ id }) => id !== msg.member.userId
-							);
-							if (reaction.users.length === 0) {
-								message.reactions = message.reactions.filter(
-									(r) => r.reaction !== msg.reaction
-								);
-							}
+			unsubscribeMessageReactionRemoved = ws.subscribe('direct-message-reaction-removed', (msg) => {
+				const message = currentRoom.messages.find((m) => m.id === msg.messageId);
+				if (message) {
+					const reaction = message.reactions.find((r) => r.reaction === msg.reaction);
+					if (reaction) {
+						reaction.users = reaction.users.filter(({ id }) => id !== msg.member.userId);
+						if (reaction.users.length === 0) {
+							message.reactions = message.reactions.filter((r) => r.reaction !== msg.reaction);
 						}
 					}
 				}
-			);
+			});
 
-			unsubscribeUserStatusUpdated = ws.subscribe(
-				'user-status-updated',
-				(msg) => {
-					if (msg.userId === otherUserProfile.id) {
-						otherUserProfile.status = msg.status;
-					}
+			unsubscribeUserStatusUpdated = ws.subscribe('user-status-updated', (msg) => {
+				if (otherUserProfile && msg.userId === otherUserProfile.id) {
+					otherUserProfile.status = msg.status;
 				}
-			);
+			});
 		} catch (e) {
 			console.error(e);
 		}
 	};
 
-	const scrollToBottomSafe = async (element) => {
+	const scrollToBottomSafe = async (element: HTMLDivElement | null) => {
 		if (!element) return;
 		isAutoScrolling = true;
 		await scrollToBottom(element, 'auto');
@@ -248,9 +211,7 @@
 			if (newMessages.length > 0) {
 				// Ajoute les nouveaux messages au début de la liste
 				currentRoom.messages = [
-					...newMessages.sort(
-						(a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-					),
+					...newMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()),
 					...currentRoom.messages
 				];
 				// Si on dépasse le nombre maximum, on retire les messages les plus récents
@@ -277,9 +238,7 @@
 				// Ajoute les nouveaux messages à la fin de la liste
 				currentRoom.messages = [
 					...currentRoom.messages,
-					...newMessages.sort(
-						(a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-					)
+					...newMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 				];
 				// Si on dépasse le nombre maximum, on retire les messages les plus anciens
 				while (currentRoom.messages.length > MAX_MESSAGES) {
@@ -320,11 +279,10 @@
 
 	// Set the input placeholder if the input is empty
 	$effect(() => {
-		if (currentMessage.trim() === '' && inputElement)
-			inputElement.innerText = '';
+		if (currentMessage.trim() === '' && inputElement) inputElement.innerText = '';
 	});
 
-	const handleInputKeyDown = (e) => {
+	const handleInputKeyDown = (e: KeyboardEvent) => {
 		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
 			sendMessageToWs();
@@ -335,15 +293,11 @@
 		if (topObserver) topObserver.disconnect();
 		if (bottomObserver) bottomObserver.disconnect();
 	});
-
-	const handleLanguageButtonClick = () => {
-		window.location.href = `/chat/direct/translate`;
-	};
 </script>
 
-<div class="relative w-full h-screen flex flex-col gap-y-4 flex-1 overflow-auto">
+<div class="relative flex h-screen w-full flex-1 flex-col gap-y-4 overflow-auto">
 	{#if otherUserProfile}
-		<div class="flex items-center justify-between gap-x-2 bg-gray-100 dark:bg-gray-800 p-4">
+		<div class="flex items-center justify-between gap-x-2 bg-gray-100 p-4 dark:bg-gray-800">
 			<div class="flex items-center gap-x-4 bg-gray-100 p-4 dark:bg-gray-800">
 				<a href="/chat" class="text-muted-foreground hover:text-primary">
 					<ChevronLeft size={30} />
@@ -352,39 +306,36 @@
 			<div class="flex items-center gap-x-2">
 				<div class="relative size-12">
 					<Avatar.Root>
-						<Avatar.Image
-							src={getS3ObjectUrl(S3Bucket.USERS_AVATARS, otherUserProfile.id)}
-						/>
+						<Avatar.Image src={getS3ObjectUrl(S3Bucket.USERS_AVATARS, otherUserProfile.id)} />
 						<Avatar.Fallback
-						>{fallbackAvatarLetters(
-							otherUserProfile.firstName + " " + otherUserProfile.lastName,
-						)}</Avatar.Fallback
+							>{fallbackAvatarLetters(
+								otherUserProfile.firstName + ' ' + otherUserProfile.lastName
+							)}</Avatar.Fallback
 						>
 					</Avatar.Root>
 					<span
-						class={cn("rounded-full absolute bottom-2 right-2 size-3", {
-								"bg-green-500": otherUserProfile.status === PublicStatus.ONLINE,
-								"bg-yellow-500": otherUserProfile.status === PublicStatus.AWAY,
-								"bg-red-500":
-									otherUserProfile.status === PublicStatus.DO_NOT_DISTURB,
-								"bg-gray-500": otherUserProfile.status === PublicStatus.OFFLINE,
-							})}
+						class={cn('absolute right-2 bottom-2 size-3 rounded-full', {
+							'bg-green-500': otherUserProfile.status === PublicStatus.ONLINE,
+							'bg-yellow-500': otherUserProfile.status === PublicStatus.AWAY,
+							'bg-red-500': otherUserProfile.status === PublicStatus.DO_NOT_DISTURB,
+							'bg-gray-500': otherUserProfile.status === PublicStatus.OFFLINE
+						})}
 					>
-						</span>
+					</span>
 				</div>
 
 				<div class="flex flex-col overflow-hidden">
-						<span class="font-semibold text-base truncate">
-							{otherUserProfile.firstName} {otherUserProfile.lastName}
-						</span>
-					<span class="text-sm text-gray-500 truncate">{otherUserProfile.email}</span>
+					<span class="truncate text-base font-semibold">
+						{otherUserProfile.firstName}
+						{otherUserProfile.lastName}
+					</span>
+					<span class="truncate text-sm text-gray-500">{otherUserProfile.email}</span>
 				</div>
 			</div>
 		</div>
 	{/if}
 
-	<div class="flex-1 overflow-y-auto px-3 py-2 space-y-4" bind:this={elementsList}>
-
+	<div class="flex-1 space-y-4 overflow-y-auto px-3 py-2" bind:this={elementsList}>
 		{#if currentRoom.id !== null}
 			<!-- Sentinel en haut -->
 			<div bind:this={topSentinel} class="sentinel mt-4"></div>
@@ -394,32 +345,27 @@
 					<ContextMenu.Root>
 						<ContextMenu.Trigger>
 							<div
-								class="flex gap-x-4 items-start"
-								class:justify-end={message.author.userId ===
-                  authenticatedUser.id}
+								class="flex items-start gap-x-4"
+								class:justify-end={message.author.userId === authenticatedUser.id}
 							>
 								{#snippet messageReaction()}
-									<div class="flex items-center gap-2 mb-4">
+									<div class="mb-4 flex items-center gap-2">
 										{#each message.reactions as { reaction, users } (reaction)}
 											<div
 												class={cn(
-                          "flex items-center justify-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg text-lg gap-x-2 transition-colors duration-300 select-none",
-                          {
-                            "ring-2 ring-primary !bg-primary/30": users.find(
-                              ({ id }) => id === authenticatedUser.id,
-                            ),
-                          },
-                        )}
-												onclick={() =>
-                          handleMessageReactionToggle(message.id, reaction)}
+													'flex items-center justify-center gap-x-2 rounded-lg bg-gray-100 p-1 text-lg transition-colors duration-300 select-none dark:bg-gray-800',
+													{
+														'ring-primary !bg-primary/30 ring-2': users.find(
+															({ id }) => id === authenticatedUser.id
+														)
+													}
+												)}
+												onclick={() => handleMessageReactionToggle(message.id, reaction)}
 												role="button"
 												tabindex="-1"
 											>
 												<span>{reaction}</span>
-												<NumberFlow
-													spinTiming={{ duration: 150 }}
-													value={users.length}
-												/>
+												<NumberFlow spinTiming={{ duration: 150 }} value={users.length} />
 											</div>
 										{/each}
 									</div>
@@ -428,34 +374,34 @@
 								{#if message.author.userId !== authenticatedUser.id}
 									<div>
 										<div class="text-sm font-medium">
-											{message.author.firstName} {message.author.lastName}
+											{message.author.firstName}
+											{message.author.lastName}
 										</div>
-										<div class="bg-muted px-3 py-2 rounded-xl shadow text-sm mt-1">
+										<div class="bg-muted mt-1 rounded-xl px-3 py-2 text-sm shadow">
 											{message.content}
 										</div>
-										<div class="text-xs text-gray-400 mt-1">{formatDate(message.createdAt)}</div>
+										<div class="mt-1 text-xs text-gray-400">{formatDate(message.createdAt)}</div>
 										{@render messageReaction()}
 									</div>
 								{:else}
 									<div class="max-w-[70%] text-right">
-										<div class="rounded-2xl px-4 py-2 bg-primary text-white text-sm shadow inline-block">
+										<div
+											class="bg-primary inline-block rounded-2xl px-4 py-2 text-sm text-white shadow"
+										>
 											{message.content}
 										</div>
-										<div class="text-xs text-gray-400 mt-1">{formatDate(message.createdAt)}</div>
+										<div class="mt-1 text-xs text-gray-400">{formatDate(message.createdAt)}</div>
 										{@render messageReaction()}
 									</div>
 								{/if}
 							</div>
 						</ContextMenu.Trigger>
 						<ContextMenu.Content class="w-64">
-							<ContextMenu.Item
-								class="flex justify-between hover:!bg-white dark:hover:!bg-popover"
-							>
-								{#each ["😊", "😂", "🤷‍♂️", "👍"] as emoji}
+							<ContextMenu.Item class="dark:hover:!bg-popover flex justify-between hover:!bg-white">
+								{#each ['😊', '😂', '🤷‍♂️', '👍'] as emoji}
 									<div
-										class="flex items-center justify-center bg-gray-100 dark:bg-gray-800 transition-colors duration-300 p-2 rounded-full w-8 h-8 text-lg"
-										onclick={() =>
-                      handleMessageReactionToggle(message.id, emoji)}
+										class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 p-2 text-lg transition-colors duration-300 dark:bg-gray-800"
+										onclick={() => handleMessageReactionToggle(message.id, emoji)}
 										role="button"
 										tabindex="-1"
 									>
@@ -464,16 +410,12 @@
 								{/each}
 							</ContextMenu.Item>
 							<ContextMenu.Sub>
-								<ContextMenu.SubTrigger
-								>Ajouter une réaction
-								</ContextMenu.SubTrigger
-								>
+								<ContextMenu.SubTrigger>Ajouter une réaction</ContextMenu.SubTrigger>
 								<ContextMenu.SubContent class="min-w-max">
-									{#each ["😉", "😎", "😢"] as emoji}
+									{#each ['😉', '😎', '😢'] as emoji}
 										<ContextMenu.Item
 											class="text-lg"
-											onclick={() =>
-                        handleMessageReactionToggle(message.id, emoji)}
+											onclick={() => handleMessageReactionToggle(message.id, emoji)}
 											role="button"
 											tabindex={-1}
 										>
@@ -490,7 +432,7 @@
 								</div>
 							</ContextMenu.Item>
 							<ContextMenu.Item
-								class="text-red-500 hover:!bg-red-500 hover:!text-white flex justify-between"
+								class="flex justify-between text-red-500 hover:!bg-red-500 hover:!text-white"
 							>
 								<span>Supprimer</span>
 								<div>
@@ -509,28 +451,37 @@
 
 	{#if otherUserProfile}
 		<div
-			class="sticky bottom-0 z-20 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 px-4 py-3 flex items-center gap-2">
+			class="sticky bottom-0 z-20 flex items-center gap-2 border-t border-gray-300 bg-gray-100 px-4 py-3 dark:border-gray-700 dark:bg-gray-800"
+		>
 			<div
-				class="flex-1 min-h-[40px] max-h-32 overflow-y-auto rounded-lg bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none"
+				class="max-h-32 min-h-[40px] flex-1 overflow-y-auto rounded-lg bg-white px-3 py-2 text-sm focus:outline-none dark:bg-gray-700"
 				contenteditable
 				placeholder="Écrivez un message à {otherUserProfile.firstName}"
 				bind:this={inputElement}
 				bind:innerText={currentMessage}
 				onkeydown={handleInputKeyDown}
 			></div>
-			<button class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700" onclick={handleLanguageButtonClick}>
+			<Button
+				variant="ghost"
+				class="rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-700"
+				href="/chat/direct/translate?chatId={currentChatId}{aroundMessageId
+					? `&aroundMessageId=${aroundMessageId}`
+					: ''}"
+			>
 				<Languages size={20} class="text-primary" />
-			</button>
-			<button class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700" onclick={sendMessageToWs}>
+			</Button>
+			<button
+				class="rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-700"
+				onclick={sendMessageToWs}
+			>
 				<Send size={20} class="text-primary" />
 			</button>
-
 		</div>
 	{/if}
 </div>
 
 <style>
-    .sentinel {
-        height: 1px;
-    }
+	.sentinel {
+		height: 1px;
+	}
 </style>

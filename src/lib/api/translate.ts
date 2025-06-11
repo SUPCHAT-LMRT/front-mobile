@@ -1,7 +1,5 @@
+import { PUBLIC_API_TRANSLATE_URL } from '$env/static/public';
 import axios from 'axios';
-import { env } from "$env/dynamic/public";
-
-const PUBLIC_API_TRANSLATE_URL = `${env.PUBLIC_API_TRANSLATE_URL}`;
 
 interface MyMemoryResponse {
     responseData: {
