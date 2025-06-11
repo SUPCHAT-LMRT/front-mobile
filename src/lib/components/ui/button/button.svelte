@@ -15,6 +15,8 @@
 				secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
 				ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
 				link: "text-primary underline-offset-4 hover:underline",
+				option:
+					'bg-background hover:bg-accent/50 active:bg-accent/80 rounded-xl text-foreground transition-all duration-300 ease-in-out justify-start gap-3 active:scale-[0.98] w-[95%]'
 			},
 			size: {
 				default: "h-9 px-4 py-2 has-[>svg]:px-3",

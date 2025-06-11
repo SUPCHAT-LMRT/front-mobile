@@ -1,12 +1,18 @@
 <script lang="ts">
+	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+	import { changeUserStatus, PrivateStatus } from '$lib/api/user';
 	import { page } from '$app/state';
-	import { changeUserStatus, logout, PrivateStatus } from '$lib/api/user';
-	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import { goto } from '$lib/utils/goto';
 	import type { AuthenticatedUserState } from '../../../../routes/(auth)/authenticatedUser.svelte';
+	import { buttonVariants } from "$lib/components/ui/button/index.js";
+	import { Button } from "$lib/components/ui/button/index.js";
+	import { Separator } from "$lib/components/ui/separator/index.js";
+	import { cn } from '$lib/utils';
+	import { BellOff, Mail, MonitorCog, Smile, User, UserCheck, UserX } from 'lucide-svelte';
+	import * as Drawer from "$lib/components/ui/drawer/index.js";
+	import ContentUserAdmin from '$lib/components/app/drawer-admin/user/ContentUserAdmin.svelte';
 
-	const { authenticatedUserState } = page.data as {
+
+	const {authenticatedUserState} = page.data as {
 		authenticatedUserState: AuthenticatedUserState;
 	};
 
@@ -17,41 +23,42 @@
 	};
 </script>
 
-<div class="flex flex-col gap-1">
-	<div class="pl-4">
+<div class="flex flex-col gap-1 justify-start items-start">
+	<div class="px-4 w-full">
 		<DropdownMenu.Root>
-			<DropdownMenu.Trigger class={buttonVariants({ variant: 'outline' })}
-				>Changer de status</DropdownMenu.Trigger
-			>
+			<DropdownMenu.Trigger class={cn(buttonVariants({ variant: "option" }), "text-gray-800 justify-start")}>
+				<Smile />
+				Quel est votre statut ?
+			</DropdownMenu.Trigger>
 			<DropdownMenu.Content class="min-w-[200px]">
 				<DropdownMenu.Group>
 					<DropdownMenu.GroupHeading>Status</DropdownMenu.GroupHeading>
 					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+						class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
 						onclick={() => selectStatus(PrivateStatus.ONLINE)}
 					>
-						<span class="h-3 w-3 rounded-full bg-green-500"></span>
+						<span class="w-3 h-3 bg-green-500 rounded-full"></span>
 						Connecté
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+						class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
 						onclick={() => selectStatus(PrivateStatus.AWAY)}
 					>
-						<span class="h-3 w-3 rounded-full bg-yellow-500"></span>
+						<span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
 						Absent
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+						class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
 						onclick={() => selectStatus(PrivateStatus.DO_NOT_DISTURB)}
 					>
-						<span class="h-3 w-3 rounded-full bg-red-500"></span>
+						<span class="w-3 h-3 bg-red-500 rounded-full"></span>
 						Ne pas déranger
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
-						class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+						class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
 						onclick={() => selectStatus(PrivateStatus.INVISIBLE)}
 					>
-						<span class="h-3 w-3 rounded-full bg-gray-500"></span>
+						<span class="w-3 h-3 bg-gray-500 rounded-full"></span>
 						Invisible
 					</DropdownMenu.Item>
 				</DropdownMenu.Group>
@@ -59,16 +66,61 @@
 		</DropdownMenu.Root>
 	</div>
 
-	<div class="pl-4">
+	<div class="px-4 flex flex-col gap-2 justify-start items-start w-full">
+		<Button variant="option" size="sm" class="text-gray-800 justify-start">
+			<BellOff />
+			Suspendre les notifications
+		</Button>
+
 		<Button
-			variant="outline"
-			class="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-			onclick={() => {
-				logout();
-				goto('/login');
-			}}
+			variant="option"
+			size="sm"
+			class="text-gray-800 justify-start"
+			onclick={() => selectStatus(authenticatedUserState.user.status === PrivateStatus.AWAY ? PrivateStatus.ONLINE : PrivateStatus.AWAY)}
 		>
-			Déconnexion
+			{#if authenticatedUserState.user.status === PrivateStatus.AWAY}
+				<UserCheck />
+				Me signaler disponible
+			{:else}
+				<UserX />
+				Me signaler absent(e)
+			{/if}
+		</Button>
+	</div>
+
+	<Separator class="my-3" />
+
+	<p class="text-sm font-medium pl-2 text-gray-500 dark:text-gray-400">
+		Admin
+	</p>
+
+	<div class="px-4 flex flex-col gap-2 justify-start items-start w-full">
+
+
+		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
+			<Drawer.Trigger>
+				<Button variant="option" size="sm" class="text-gray-800 justify-start">
+					<User />
+					Gestion des utilisateurs
+				</Button>
+			</Drawer.Trigger>
+			<Drawer.Portal>
+				<Drawer.Overlay class="fixed inset-0 bg-black/40" />
+				<Drawer.Content
+					class="fixed right-0 bottom-0 left-0 mt-24 flex h-full max-h-[98%] flex-col rounded-t-[10px]">
+					<ContentUserAdmin />
+				</Drawer.Content>
+			</Drawer.Portal>
+		</Drawer.NestedRoot>
+
+		<Button variant="option" size="sm" class="text-gray-800 justify-start">
+			<MonitorCog />
+				Gestion des postes
+		</Button>
+
+		<Button variant="option" size="sm" class="text-gray-800 justify-start">
+			<Mail />
+			Gestion des invitations
 		</Button>
 	</div>
 </div>
