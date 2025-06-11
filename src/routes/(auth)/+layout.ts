@@ -1,6 +1,7 @@
 import { getLoginUser, PrivateStatus, type User } from "$lib/api/user";
 import ws from "$lib/api/ws";
 import { goto } from "$lib/utils/goto";
+import { FirebaseMessaging } from "@capacitor-firebase/messaging";
 import type { LayoutLoad } from "./$types";
 import { authenticatedUserState, type AuthenticatedUserState } from "./authenticatedUser.svelte";
 
@@ -8,7 +9,7 @@ export const load: LayoutLoad = async (): Promise<{ authenticatedUserState: Auth
 	try {
 		authenticatedUserState.user = await getLoginUser();
 	} catch (error) {
-		console.error("Erreur lors de la vérification de l'utilisateur :", error);
+		console.error("Erreur lors de la vérification de l'utilisateur :", (error as string).toString());
 	}
 	const state = authenticatedUserState as AuthenticatedUserState;
 
@@ -25,6 +26,8 @@ export const load: LayoutLoad = async (): Promise<{ authenticatedUserState: Auth
 	);
 
 	ws.initWebSocket(); // Connect to the WebSocket server
+
+	await FirebaseMessaging.requestPermissions();
 
 	return {
 		authenticatedUserState: state,
