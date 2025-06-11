@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import { getWorkspaceMembers, type WorkspaceMember } from '$lib/api/workspace/member';
 	import { Button } from '$lib/components/ui/button';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -20,13 +19,12 @@
 		createChannel: () => void;
 	};
 
-	const { createChannelData, createChannel }: Props = $props();
+	const { createChannelData, createChannel, workspaceId }: Props = $props();
 	createChannelData.members = createChannelData.members || [];
 
 	let step = $state(1);
 
 	let members: WorkspaceMember[] = $state([]);
-	let workspaceId = $derived(page.params.workspaceId);
 
 	$effect(() => {
 		if (!createChannelData.members) {

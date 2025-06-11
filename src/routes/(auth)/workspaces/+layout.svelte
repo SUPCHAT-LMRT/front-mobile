@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
+	import type { User } from '$lib/api/user';
 	import {
 		createWorkspace,
 		getWorkspace,
@@ -28,8 +29,11 @@
 	const { authenticatedUserState } = page.data as {
 		authenticatedUserState: AuthenticatedUserState;
 	};
+	const authenticatedUser: User = $derived(authenticatedUserState.user);
 
-	const workspaceId: string = $derived(page.url.searchParams.get('workspaceId') || '');
+	const workspaceId: string = $derived(
+		page.url.searchParams.get('workspaceId') || localStorage.getItem('workspaceId') || ''
+	);
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 
 	let drawerOpen = $state(false);
@@ -54,6 +58,7 @@
 			if (!workspaceId) return;
 			try {
 				currentWorkspaceState.workspace = await getWorkspace(workspaceId);
+				localStorage.setItem('workspaceId', workspaceId);
 			} catch (e) {
 				if (e instanceof AxiosError) {
 					if (e.response?.status === 404) {
@@ -98,31 +103,40 @@
 	}
 </script>
 
-<div class="flex flex-col gap-y-4">
+<div class="flex h-screen flex-col gap-y-4">
+	{#if page.route.id === '/(auth)/workspaces'}
+		{@render workspaceSelector()}
+	{/if}
+
+	{@render children()}
+</div>
+
+{#snippet workspaceSelector()}
 	<div class="pt-safe px-4">
 		<div class="flex items-center justify-start gap-x-4">
 			<Drawer.Root bind:open={drawerOpen}>
 				<Drawer.Trigger class="flex items-center gap-x-4">
 					{#if workspace}
-						<Avatar.Root class="size-12 rounded-3xl bg-gray-200">
-							{#key workspace}
+						{#key workspace}
+							<Avatar.Root class="size-12 rounded-3xl bg-gray-200">
 								<Avatar.Image
 									src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)}?v={Date.now()}"
 									alt={workspace.name}
 									class="h-full w-full object-cover"
 								/>
-							{/key}
-
-							<Avatar.Fallback class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl">
-								{fallbackAvatarLetters(workspace.name)}
-							</Avatar.Fallback>
-						</Avatar.Root>
+								<Avatar.Fallback
+									class="rounded-3xl transition-all hover:scale-105 hover:rounded-2xl"
+								>
+									{fallbackAvatarLetters(workspace.name)}
+								</Avatar.Fallback>
+							</Avatar.Root>
+						{/key}
 						<div class="flex flex-col">
 							<div class="flex items-center">
 								<span>{workspace.name}</span>
 								<ChevronsUpDown strokeWidth={2.5} size={16} />
 							</div>
-							<span class="text-muted-foreground">{authenticatedUserState.user.email}</span>
+							<span class="text-muted-foreground">{authenticatedUser.email}</span>
 						</div>
 					{:else}
 						<Globe strokeWidth={2.5} size={16} />
@@ -135,7 +149,7 @@
 				<Drawer.Content class="min-h-[96%]">
 					<Drawer.Header>
 						<Drawer.Title>Espaces de travail</Drawer.Title>
-						<Drawer.Description>{authenticatedUserState.user.email}</Drawer.Description>
+						<Drawer.Description>{authenticatedUser.email}</Drawer.Description>
 					</Drawer.Header>
 
 					<div class="overflow-auto">
@@ -184,17 +198,17 @@
 
 					<Drawer.Footer class="flex w-full flex-row gap-x-2">
 						<Dialog.Root bind:open={dialogOpen}>
-							<Dialog.Trigger class={cn(buttonVariants(), 'w-full max-w-full shrink')}
-								>Créer</Dialog.Trigger
-							>
+							<Dialog.Trigger class={cn(buttonVariants(), 'w-full max-w-full shrink')}>
+								Créer
+							</Dialog.Trigger>
 							<Dialog.Content>
 								<Dialog.Header
 									class="relative flex h-full flex-col items-center justify-center text-center"
 								>
 									<div class="text-center">
-										<Dialog.Title class="text-2xl font-bold">
-											Crée ton espace de travail
-										</Dialog.Title>
+										<Dialog.Title class="text-2xl font-bold"
+											>Crée ton espace de travail</Dialog.Title
+										>
 										<p class="mt-2 text-sm text-gray-700">
 											Ton espace de travail est l&apos;endroit où tu retrouves tes amis. Crée le
 											tien et lance une discussion.
@@ -284,6 +298,4 @@
 			</Drawer.Root>
 		</div>
 	</div>
-
-	{@render children()}
-</div>
+{/snippet}

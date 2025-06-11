@@ -1,11 +1,7 @@
 <script lang="ts">
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
-	import {
-		createWorkspaceChannel,
-		listWorkspaceChannels,
-		listWorkspacePrivateChannels
-	} from '$lib/api/workspace/channels';
 	import { type Channel, type Workspace } from '$lib/api/workspace/workspace';
+	import ws from '$lib/api/ws';
 	import CreateChannelDialog from '$lib/components/app/workspace/CreateChannelDialog.svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Button } from '$lib/components/ui/button';
@@ -16,6 +12,12 @@
 	import { AxiosError } from 'axios';
 	import { Settings, UserPlus } from 'lucide-svelte';
 	import { currentWorkspaceState } from './currentWorkspace.svelte';
+	import InviteMemberDialog from '$lib/components/app/workspace/InviteMemberDialog.svelte';
+	import {
+		createWorkspaceChannel,
+		listWorkspaceChannels,
+		listWorkspacePrivateChannels
+	} from '$lib/api/workspace/channels';
 
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 	let publicChannels: Channel[] = $state([]);
@@ -92,6 +94,34 @@
 			}
 		}
 	};
+
+	// $effect to send the selectWorkspace message to the server when the workspace changes
+	$effect(() => {
+		if (!workspace) return;
+		ws.selectWorkspace(workspace.id);
+
+		return () => {
+			ws.unselectWorkspace();
+		};
+	});
+
+	$effect(() => {
+		if (!workspace) return;
+		// Subscribe to channel updates
+		const unsubscribeChannelCreated = ws.subscribe('channel-created', (msg) => {
+			const channelCreated = msg.channel as Channel;
+			if (channelCreated.workspaceId !== workspace.id) return; // This is not supposed to happen but just in case (because it's handled by the server)
+			if (channelCreated.isPrivate) {
+				privateChannels.push(channelCreated);
+			} else {
+				publicChannels.push(channelCreated);
+			}
+		});
+
+		return () => {
+			unsubscribeChannelCreated();
+		};
+	});
 </script>
 
 {#if workspace}
@@ -99,7 +129,7 @@
 		<div class="bg-muted relative h-40 w-full">
 			<img
 				src={getS3ObjectUrl(S3Bucket.WORKSPACES_BANNERS, workspace.id)}
-				alt={`${workspace.name} banner`}
+				alt="{workspace.name} banner"
 				class="h-full w-full object-cover"
 			/>
 
@@ -122,8 +152,8 @@
 					<div class="flex gap-2">
 						<Button variant="outline" class="flex items-center gap-2">
 							<UserPlus size={18} />
-							<span class="hidden sm:inline">Inviter un membre</span>
-							<span class="inline sm:hidden">Inviter</span>
+							<span class="inline sm:hidden"><InviteMemberDialog workspaceId={workspace.id} /></span
+							>
 						</Button>
 						<Button
 							href="/workspaces/settings?workspaceId={workspace.id}"
@@ -143,7 +173,6 @@
 								<User size={14} class="text-muted-foreground ml-1" />
 								Salons publics
 							</h2>
-							<span class="text-muted-foreground ml-2 text-sm">{publicChannels.length}</span>
 						</div>
 
 						<Button
@@ -156,7 +185,7 @@
 								createChannelData.members = [];
 							}}
 						>
-							<Plus size={16} />
+							<Plus size={16} class="text-primary" />
 							<span>Créer un salon</span>
 						</Button>
 					</div>
@@ -166,12 +195,14 @@
 					<div class="space-y-1">
 						{#each publicChannels as channel}
 							<a
-								href="/channels?workspaceId={workspace.id}&channelId={channel.id}"
+								href="/workspaces/channels?workspaceId={workspace.id}&channelId={channel.id}"
 								class="hover:bg-accent flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
 							>
-								<Hash size={18} class="text-primary -translate-y-0.5" />
+								<Hash size={18} class="text-primary translate-y-0.5" />
 								<span>{channel.name}</span>
 							</a>
+						{:else}
+							<p class="text-muted-foreground">Aucun salon public disponible</p>
 						{/each}
 					</div>
 				</div>
@@ -183,7 +214,6 @@
 								<Lock size={14} class="text-muted-foreground ml-1" />
 								Salons privé
 							</h2>
-							<span class="text-muted-foreground ml-2 text-sm">{privateChannels.length}</span>
 						</div>
 
 						<Button
@@ -211,7 +241,7 @@
 								<span>{channel.name}</span>
 							</button>
 						{:else}
-							<p class="text-muted-foreground">Aucun salon privé disponible</p>
+							<p class="text-muted-foreground">Aucun salon disponible</p>
 						{/each}
 					</div>
 				</div>
