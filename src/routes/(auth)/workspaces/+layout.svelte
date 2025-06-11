@@ -103,7 +103,7 @@
 	}
 </script>
 
-<div class="flex h-screen flex-col gap-y-4">
+<div class="flex flex-col gap-y-4">
 	{#if page.route.id === '/(auth)/workspaces'}
 		{@render workspaceSelector()}
 	{/if}

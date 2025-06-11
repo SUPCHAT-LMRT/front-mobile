@@ -10,7 +10,6 @@
 	import { Briefcase, House, MessageSquareMore, User, type IconProps } from '@lucide/svelte';
 	import { ModeWatcher } from 'mode-watcher';
 	import type { Component } from 'svelte';
-	import * as Tooltip from "$lib/components/ui/tooltip/index.js";
 
 	import { statusMap } from '$lib/api/user';
 	import type { AuthenticatedUserState } from './authenticatedUser.svelte';
@@ -28,9 +27,7 @@
 <Toaster position="top-center" />
 
 <div data-vaul-drawer-wrapper>
-	<Tooltip.Provider delayDuration={0}>
-		{@render children()}
-	</Tooltip.Provider>
+	{@render children()}
 </div>
 
 <div
