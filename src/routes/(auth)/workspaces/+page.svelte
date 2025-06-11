@@ -22,6 +22,8 @@
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 	let publicChannels: Channel[] = $state([]);
 	let privateChannels: Channel[] = $state([]);
+	let forceRenderBanner = $state(Date.now());
+	let forceRenderIcon = $state(Date.now());
 	let createChannelData = $state({
 		dialogOpen: false,
 		name: '',
@@ -46,6 +48,21 @@
 				publicChannels = [];
 			}
 		};
+
+		$effect(() => {
+			return ws.subscribe("workspace-updated", (msg) => {
+				if (msg.workspaceId === workspace?.id) {
+					workspace = {
+						...workspace!,
+						name: msg.name,
+						topic: msg.topic,
+						type: msg.type
+					};
+					forceRenderBanner = Date.now();
+					forceRenderIcon = Date.now();
+				}
+			});
+		});
 
 		const fetchWorkspacePrivateChannels = async () => {
 			if (!workspace?.id) return;
@@ -128,16 +145,26 @@
 	<div class="bg-background flex h-full w-full flex-col">
 		<div class="bg-muted relative h-40 w-full">
 			<img
-				src={getS3ObjectUrl(S3Bucket.WORKSPACES_BANNERS, workspace.id)}
-				alt="{workspace.name} banner"
-				class="h-full w-full object-cover"
+				src="{getS3ObjectUrl(
+              S3Bucket.WORKSPACES_BANNERS,
+              workspace.id,
+            )}?{forceRenderBanner}"
+				alt=""
+				class="w-full h-full mb-6 object-cover"
 			/>
 
 			<div class="absolute -bottom-12 flex w-full items-center justify-between px-6">
 				<div class="flex items-center gap-4">
 					{#key workspace}
 						<Avatar.Root class="border-background size-24 border-4 bg-gray-200 shadow-sm">
-							<Avatar.Image src={getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)} />
+							<Avatar.Image
+								src="{getS3ObjectUrl(
+                    S3Bucket.WORKSPACES_ICONS,
+                    workspace.id,
+                  )}?{forceRenderIcon}"
+								alt={`Workspace ${workspace.id}`}
+								class="rounded-full"
+							/>
 							<Avatar.Fallback class="bg-primary rounded-full text-white">
 								{fallbackAvatarLetters(workspace.name)}
 							</Avatar.Fallback>

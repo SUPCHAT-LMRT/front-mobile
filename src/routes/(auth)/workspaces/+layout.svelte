@@ -24,6 +24,7 @@
 	import { AxiosError } from 'axios';
 	import type { AuthenticatedUserState } from '../authenticatedUser.svelte';
 	import { currentWorkspaceState } from './currentWorkspace.svelte';
+	import ws from '$lib/api/ws';
 
 	const { children } = $props();
 	const { authenticatedUserState } = page.data as {
@@ -43,6 +44,7 @@
 	let workspaceIconImage: File | undefined = $state(undefined);
 	let type: WorkspaceType = $state(WorkspaceType.PRIVATE);
 	let dialogOpen = $state(false);
+	let forceRenderIcon = $state(Date.now());
 
 	$effect(() => {
 		const fetchWorkspaces = async () => {
@@ -53,6 +55,20 @@
 				error('Erreur', 'Impossible de récupérer les espaces de travail');
 			}
 		};
+
+		$effect(() => {
+			return ws.subscribe("workspace-updated", (msg) => {
+				if (msg.workspaceId === workspace?.id) {
+					workspace = {
+						...workspace!,
+						name: msg.name,
+						topic: msg.topic,
+						type: msg.type
+					};
+					forceRenderIcon = Date.now();
+				}
+			});
+		});
 
 		const fetchCurrentWorkspace = async () => {
 			if (!workspaceId) return;
@@ -120,7 +136,10 @@
 						{#key workspace}
 							<Avatar.Root class="size-12 rounded-3xl bg-gray-200">
 								<Avatar.Image
-									src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)}?v={Date.now()}"
+									src="{getS3ObjectUrl(
+                    S3Bucket.WORKSPACES_ICONS,
+                    workspace.id,
+                  )}?{forceRenderIcon}"
 									alt={workspace.name}
 									class="h-full w-full object-cover"
 								/>
@@ -136,7 +155,7 @@
 								<span>{workspace.name}</span>
 								<ChevronsUpDown strokeWidth={2.5} size={16} />
 							</div>
-							<span class="text-muted-foreground">{authenticatedUser.email}</span>
+							<span class="text-muted-foreground">{workspace.topic}</span>
 						</div>
 					{:else}
 						<Globe strokeWidth={2.5} size={16} />

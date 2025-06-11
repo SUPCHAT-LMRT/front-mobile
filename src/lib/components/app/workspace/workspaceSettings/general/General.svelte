@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { checkRolePermission, RolePermission } from '$lib/api/workspace/roles';
 	import {
-		updateWorkspace,
+		updateWorkspace, updateWorkspaceBanner,
 		updateWorkspaceIcon,
 		type Workspace
 	} from '$lib/api/workspace/workspace';
@@ -26,6 +26,8 @@
 	let workspaceIcon: File | null = null;
 	// eslint-disable-next-line svelte/valid-compile
 	let iconPreview: string | null = $state(null);
+	let workspaceBanner: File | null = null;
+	let bannerPreview: string | null = $state(null);
 	let hasPermission = $derived.by(async () => {
 		if (!workspace) return false;
 		try {
@@ -76,6 +78,37 @@
 			console.error('Error updating workspace icon:', err);
 		}
 	};
+
+	const handleBannerUpload = async () => {
+		if (!workspaceBanner) {
+			notifyByLevel({
+				title: 'Erreur',
+				level: 'error',
+				message: 'Veuillez sélectionner une bannière à télécharger.'
+			});
+			return;
+		}
+
+		try {
+			await updateWorkspaceBanner(workspace.id, workspaceBanner);
+			success('Succès', "La bannière du workspace a été mise à jour avec succès.");
+		} catch (err) {
+			notifyByLevel({
+				title: 'Erreur',
+				level: 'error',
+				message: "Une erreur est survenue lors de la mise à jour de la bannière."
+			});
+			console.error('Error updating workspace banner:', err);
+		}
+	};
+
+	const handleBannerChange = (event: Event) => {
+		const target = event.target as HTMLInputElement;
+		if (target.files && target.files[0]) {
+			workspaceBanner = target.files[0];
+			bannerPreview = URL.createObjectURL(workspaceBanner);
+		}
+	}
 
 	const handleFileChange = (event: Event) => {
 		const target = event.target as HTMLInputElement;
@@ -131,13 +164,21 @@
 						class="min-h-[100px]"
 					/>
 				</div>
-				<div class="space-y-4">
+				<div class="space-y-2">
 					<Label for="icon">Icône de l'espace de travail</Label>
 					<Input id="icon" type="file" accept="image/*" onchange={handleFileChange} />
 					{#if iconPreview}
 						<img src={iconPreview} alt="Aperçu de l'icône" class="mt-2 h-16 w-16 rounded-full" />
 					{/if}
 					<Button class="mt-2 text-white" onclick={handleIconUpload}>Mettre à jour l'icône</Button>
+				</div>
+				<div class="space-y-2 mt-8">
+					<Label for="banner">Bannière de l'espace de travail</Label>
+					<Input id="banner" type="file" accept="image/*" onchange={handleBannerChange} />
+					{#if bannerPreview}
+						<img src={bannerPreview} alt="Aperçu de la bannière" class="mt-2 h-32 w-full object-cover rounded-md" />
+					{/if}
+					<Button class="mt-2 text-white" onclick={handleBannerUpload}>Mettre à jour la bannière</Button>
 				</div>
 			</CardContent>
 		</Card>

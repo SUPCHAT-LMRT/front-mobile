@@ -34,7 +34,7 @@
 						</Drawer.Description>
 					</div>
 				</Drawer.Header>
-				<div class="px-5">
+				<div class="px-5 overflow-y-auto mb-2">
 					<General {workspace} />
 				</div>
 			</Drawer.Content>
