@@ -103,7 +103,6 @@
 								},
 								(v) => {
 									workspaceType = v ? WorkspaceType.PUBLIC : WorkspaceType.PRIVATE;
-									console.log('Workspace type toggled:', workspaceType);
 								}
 							}
 						/>

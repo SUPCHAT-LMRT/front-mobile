@@ -31,7 +31,9 @@
 	};
 	const authenticatedUser: User = $derived(authenticatedUserState.user);
 
-	const workspaceId: string = $derived(page.url.searchParams.get('workspaceId') || '');
+	const workspaceId: string = $derived(
+		page.url.searchParams.get('workspaceId') || localStorage.getItem('workspaceId') || ''
+	);
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 
 	let drawerOpen = $state(false);
@@ -56,6 +58,7 @@
 			if (!workspaceId) return;
 			try {
 				currentWorkspaceState.workspace = await getWorkspace(workspaceId);
+				localStorage.setItem('workspaceId', workspaceId);
 			} catch (e) {
 				if (e instanceof AxiosError) {
 					if (e.response?.status === 404) {
