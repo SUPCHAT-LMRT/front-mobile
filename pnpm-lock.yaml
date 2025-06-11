@@ -94,8 +94,8 @@ importers:
         specifier: ^10.4.20
         version: 10.4.21(postcss@8.5.3)
       bits-ui:
-        specifier: 2.5.0
-        version: 2.5.0(@internationalized/date@3.8.2)(svelte@5.30.2)
+        specifier: 2.6.0
+        version: 2.6.0(@internationalized/date@3.8.2)(svelte@5.30.2)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -145,8 +145,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       tailwind-variants:
-        specifier: ^1.0.0
-        version: 1.0.0(tailwindcss@4.1.7)
+        specifier: ^0.2.1
+        version: 0.2.1(tailwindcss@4.1.7)
       tailwindcss:
         specifier: ^4.1.7
         version: 4.1.7
@@ -1190,8 +1190,8 @@ packages:
     resolution: {integrity: sha512-QxD8cf2eVqJOOz63z6JIN9BzvVs/dlySa5HGSBH5xtR8dPteIRQnBxxKqkNTiT6jbDTF6jAfrd4oMcND9RGbQg==}
     engines: {node: '>=0.6'}
 
-  bits-ui@2.5.0:
-    resolution: {integrity: sha512-PbjylA1UWd4A/c5AYqie/EVxQ1/8uugmJKLg9whLoBBHbfPEBGhK09dCPrahK9kA6DRHhMmij0XXIUGIfrmNow==}
+  bits-ui@2.6.0:
+    resolution: {integrity: sha512-vb0J2C7Jfh/ePnoRwPTVcnMl2JJFFmv3zv4Ssv/DU18WkB5xgIU9jEmfd3IcR7mTjIpFZgYfil1j4w6Fa+OoVw==}
     engines: {node: '>=20', pnpm: '>=8.7.0'}
     peerDependencies:
       '@internationalized/date': ^3.8.1
@@ -2417,14 +2417,14 @@ packages:
   tabbable@6.2.0:
     resolution: {integrity: sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==}
 
-  tailwind-merge@3.0.2:
-    resolution: {integrity: sha512-l7z+OYZ7mu3DTqrL88RiKrKIqO3NcpEO8V/Od04bNpvk0kiIFndGEoqfuzvj4yuhRkHKjRkII2z+KS2HfPcSxw==}
+  tailwind-merge@2.6.0:
+    resolution: {integrity: sha512-P+Vu1qXfzediirmHOC3xKGAYeZtPcV9g76X+xg2FD4tYgR71ewMA35Y3sCz3zhiN/dwefRpJX0yBcgwi1fXNQA==}
 
   tailwind-merge@3.3.0:
     resolution: {integrity: sha512-fyW/pEfcQSiigd5SNn0nApUOxx0zB/dm6UDU/rEwc2c3sX2smWUNbapHv+QRqLGVp9GWX3THIa7MUGPo+YkDzQ==}
 
-  tailwind-variants@1.0.0:
-    resolution: {integrity: sha512-2WSbv4ulEEyuBKomOunut65D8UZwxrHoRfYnxGcQNnHqlSCp2+B7Yz2W+yrNDrxRodOXtGD/1oCcKGNBnUqMqA==}
+  tailwind-variants@0.2.1:
+    resolution: {integrity: sha512-2xmhAf4UIc3PijOUcJPA1LP4AbxhpcHuHM2C26xM0k81r0maAO6uoUSHl3APmvHZcY5cZCY/bYuJdfFa4eGoaw==}
     engines: {node: '>=16.x', pnpm: '>=7.x'}
     peerDependencies:
       tailwindcss: '*'
@@ -3756,7 +3756,7 @@ snapshots:
 
   big-integer@1.6.52: {}
 
-  bits-ui@2.5.0(@internationalized/date@3.8.2)(svelte@5.30.2):
+  bits-ui@2.6.0(@internationalized/date@3.8.2)(svelte@5.30.2):
     dependencies:
       '@floating-ui/core': 1.7.0
       '@floating-ui/dom': 1.7.0
@@ -4955,13 +4955,13 @@ snapshots:
 
   tabbable@6.2.0: {}
 
-  tailwind-merge@3.0.2: {}
+  tailwind-merge@2.6.0: {}
 
   tailwind-merge@3.3.0: {}
 
-  tailwind-variants@1.0.0(tailwindcss@4.1.7):
+  tailwind-variants@0.2.1(tailwindcss@4.1.7):
     dependencies:
-      tailwind-merge: 3.0.2
+      tailwind-merge: 2.6.0
       tailwindcss: 4.1.7
 
   tailwindcss-safe-area-capacitor@0.5.1(tailwindcss@4.1.7):
