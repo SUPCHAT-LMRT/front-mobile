@@ -1,14 +1,8 @@
 <script lang="ts">
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
-	import {
-		createWorkspaceChannel,
-		listWorkspaceChannels,
-		listWorkspacePrivateChannels
-	} from '$lib/api/workspace/channels';
 	import { type Channel, type Workspace } from '$lib/api/workspace/workspace';
 	import ws from '$lib/api/ws';
 	import CreateChannelDialog from '$lib/components/app/workspace/CreateChannelDialog.svelte';
-	import InviteMemberDialog from '$lib/components/app/workspace/InviteMemberDialog.svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
@@ -18,6 +12,12 @@
 	import { AxiosError } from 'axios';
 	import { Settings, UserPlus } from 'lucide-svelte';
 	import { currentWorkspaceState } from './currentWorkspace.svelte';
+	import InviteMemberDialog from '$lib/components/app/workspace/InviteMemberDialog.svelte';
+	import {
+		createWorkspaceChannel,
+		listWorkspaceChannels,
+		listWorkspacePrivateChannels
+	} from '$lib/api/workspace/channels';
 
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 	let publicChannels: Channel[] = $state([]);

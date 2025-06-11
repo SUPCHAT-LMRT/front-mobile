@@ -1,36 +1,28 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import {
+		type DirectMessage,
+		getDirectMessages
+	} from '$lib/api/direct/message.js';
 	import { RoomKind } from '$lib/api/room';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
 	import {
-		type Channel,
-		type ChannelMessage,
-		getWorkspaceChannel,
-		getWorkspaceChannelMessages
-	} from '$lib/api/workspace/channels';
+		getUserProfile,
+		PublicStatus,
+		type UserProfile
+	} from '$lib/api/user';
 	import ws from '$lib/api/ws';
 	import '$lib/assets/styles/chats.scss';
-	import HoveredUserProfile from '$lib/components/app/HoveredUserProfile.svelte';
-	import * as Avatar from '$lib/components/ui/avatar';
-	import * as ContextMenu from '$lib/components/ui/context-menu';
-	import {
-		Tooltip,
-		TooltipContent,
-		TooltipTrigger
-	} from '$lib/components/ui/tooltip';
 	import { cn } from '$lib/utils';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters.js';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { scrollToBottom } from '$lib/utils/scrollToBottom';
 	import NumberFlow from '@number-flow/svelte';
-	import { format } from 'date-fns';
-	import { fr } from 'date-fns/locale';
 	import { ChevronLeft, Languages, Pen, Send, Trash2 } from 'lucide-svelte';
+	import type { AuthenticatedUserState } from '../../authenticatedUser.svelte.js';
 	import { onDestroy, tick } from 'svelte';
-	import type { AuthenticatedUserState } from '../../authenticatedUser.svelte';
-	import type { Workspace } from '$lib/api/workspace/workspace';
-	import { currentWorkspaceState } from '../currentWorkspace.svelte';
-	import { error } from '@sveltejs/kit';
+	import * as Avatar from '$lib/components/ui/avatar';
+	import * as ContextMenu from '$lib/components/ui/context-menu';
 
 	const { authenticatedUserState } = page.data as {
 		authenticatedUserState: AuthenticatedUserState;
@@ -42,13 +34,11 @@
 		page.url.searchParams.get('aroundMessageId')
 	);
 
-	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
-	let currentChannelId: string = $derived(page.url.searchParams.get('channelId') || '');
-	let currentChannel: Channel | null = $state(null);
-
-	let currentWorkspaceId: string = $derived(page.url.searchParams.get('workspaceId') || '');
+	// the chatId is the userId of the other user
+	let currentChatId: string = $derived(page.url.searchParams.get('chatId') || '');
+	let otherUserProfile: UserProfile = $state(null);
 	let currentMessage = $state('');
-	let currentRoom: { id: string | null; messages: ChannelMessage[] } = $state({
+	let currentRoom: { id: string | null; messages: DirectMessage[] } = $state({
 		id: null,
 		messages: []
 	});
@@ -56,6 +46,7 @@
 	let unsubscribeSendMessage = null;
 	let unsubscribeMessageReactionAdded = null;
 	let unsubscribeMessageReactionRemoved = null;
+	let unsubscribeUserStatusUpdated = null;
 	let inputElement: HTMLDivElement = $state(null);
 	let elementsList: HTMLDivElement = $state(null);
 	let isAutoScrolling = $state(false);
@@ -72,41 +63,36 @@
 	const MAX_MESSAGES = 75;
 
 	$effect(() => {
-		joinRoomAndListenMessages(currentWorkspaceId, currentChannelId);
-		getWorkspaceChannel(currentWorkspaceId, currentChannelId).then(
-			(channel) => (currentChannel = channel)
+		joinRoomAndListenMessages(currentChatId);
+		getUserProfile(currentChatId).then(
+			(userProfile) => (otherUserProfile = userProfile)
 		);
 
 		return () => {
 			unsubscribeSendMessage?.();
 			unsubscribeMessageReactionAdded?.();
 			unsubscribeMessageReactionRemoved?.();
+			unsubscribeUserStatusUpdated?.();
 			ws.leaveRoom(currentRoom.id);
 			currentRoom.id = null;
 			currentRoom.messages = [];
 		};
 	});
 
-	const joinRoomAndListenMessages = async (
-		workspaceId: string,
-		channelId: string
-	) => {
+	const joinRoomAndListenMessages = async (otherUserId: string) => {
 		try {
-			currentRoom.messages = await getWorkspaceChannelMessages(
-				workspaceId,
-				channelId,
-				{
-					limit: LIMIT_LOAD,
-					aroundMessageId
-				}
-			);
+			currentRoom.messages = await getDirectMessages(otherUserId, {
+				limit: LIMIT_LOAD,
+				aroundMessageId
+			});
 			currentRoom.messages = currentRoom.messages.sort(
 				(a, b) => a.createdAt.getTime() - b.createdAt.getTime()
 			);
-			currentRoom.id = await ws.asyncChannelJoinRoom(
-				channelId,
-				RoomKind.CHANNEL
+			const joinedRoom = await ws.asyncDirectJoinRoom(
+				otherUserId,
+				RoomKind.DIRECT
 			);
+			currentRoom.id = joinedRoom.roomId;
 
 			await tick();
 			if (aroundMessageId) {
@@ -152,16 +138,15 @@
 			}
 
 			unsubscribeSendMessage = ws.subscribe(
-				'send-channel-message',
+				'send-direct-message',
 				async (msg) => {
 					currentRoom.messages.push({
 						id: msg.messageId,
 						content: msg.content,
 						author: {
 							userId: msg.sender.userId,
-							pseudo: msg.sender.pseudo,
-							workspaceMemberId: msg.sender.workspaceMemberId,
-							workspacePseudo: msg.sender.workspacePseudo
+							firstName: msg.sender.firstName,
+							lastName: msg.sender.lastName
 						},
 						createdAt: new Date(msg.createdAt),
 						reactions: []
@@ -175,7 +160,7 @@
 			// Added is triggered when a user adds a reaction to a message,
 			// If the reaction already exists, just update the usernames array with the new user, else add the reaction to the message
 			unsubscribeMessageReactionAdded = ws.subscribe(
-				'channel-message-reaction-added',
+				'direct-message-reaction-added',
 				(msg) => {
 					const message = currentRoom.messages.find(
 						(m) => m.id === msg.messageId
@@ -205,7 +190,7 @@
 			// Removed is triggered when a user removes a reaction from a message,
 			// If the reaction exists, remove the user from the usernames array, if the usernames array is empty, remove the reaction from the message
 			unsubscribeMessageReactionRemoved = ws.subscribe(
-				'channel-message-reaction-removed',
+				'direct-message-reaction-removed',
 				(msg) => {
 					const message = currentRoom.messages.find(
 						(m) => m.id === msg.messageId
@@ -224,6 +209,15 @@
 								);
 							}
 						}
+					}
+				}
+			);
+
+			unsubscribeUserStatusUpdated = ws.subscribe(
+				'user-status-updated',
+				(msg) => {
+					if (msg.userId === otherUserProfile.id) {
+						otherUserProfile.status = msg.status;
 					}
 				}
 			);
@@ -247,14 +241,10 @@
 		try {
 			// Le plus ancien message affiché
 			const oldest = currentRoom.messages[0];
-			const newMessages = await getWorkspaceChannelMessages(
-				currentWorkspaceId,
-				currentChannelId,
-				{
-					limit: LIMIT_LOAD,
-					before: oldest.createdAt
-				}
-			);
+			const newMessages = await getDirectMessages(currentChatId, {
+				limit: LIMIT_LOAD,
+				before: oldest.createdAt
+			});
 			if (newMessages.length > 0) {
 				// Ajoute les nouveaux messages au début de la liste
 				currentRoom.messages = [
@@ -279,14 +269,10 @@
 		try {
 			// Le plus récent message affiché
 			const newest = currentRoom.messages[currentRoom.messages.length - 1];
-			const newMessages = await getWorkspaceChannelMessages(
-				currentWorkspaceId,
-				currentChannelId,
-				{
-					limit: LIMIT_LOAD,
-					after: newest.createdAt
-				}
-			);
+			const newMessages = await getDirectMessages(currentChatId, {
+				limit: LIMIT_LOAD,
+				after: newest.createdAt
+			});
 			if (newMessages.length > 0) {
 				// Ajoute les nouveaux messages à la fin de la liste
 				currentRoom.messages = [
@@ -306,7 +292,7 @@
 	};
 
 	const handleMessageReactionToggle = (messageId: string, reaction: string) => {
-		ws.toggleChannelMessageReaction(currentRoom.id, messageId, reaction);
+		ws.toggleDirectMessageReaction(currentChatId, messageId, reaction);
 	};
 
 	const sendMessageToWs = async () => {
@@ -318,18 +304,14 @@
 			? (now.getTime() - lastMessage.createdAt.getTime()) / 1000 / 60
 			: 0; // Différence en minutes
 
-		ws.sendChannelMessage(currentRoom.id, currentMessage);
+		ws.sendDirectMessage(currentChatId, currentMessage);
 		currentMessage = '';
 
 		// Si l'utilisateur est "loin" dans l'historique (ex. dernier message > 5 min), recharge les messages récents
 		if (timeDiff > 5 || !lastMessage) {
-			currentRoom.messages = await getWorkspaceChannelMessages(
-				currentWorkspaceId,
-				currentChannelId,
-				{
-					limit: LIMIT_LOAD
-				}
-			);
+			currentRoom.messages = await getDirectMessages(currentChatId, {
+				limit: LIMIT_LOAD
+			});
 			currentRoom.messages = currentRoom.messages.sort(
 				(a, b) => a.createdAt.getTime() - b.createdAt.getTime()
 			);
@@ -355,43 +337,54 @@
 	});
 
 	const handleLanguageButtonClick = () => {
-		window.location.href = (`/workspaces/channels/translate`);
+		window.location.href = `/chat/direct/translate`;
 	};
-
-	$effect(() => {
-		if (!workspace?.id || !currentChannelId) return;
-
-		const fetchChannel = async () => {
-			try {
-				currentChannel = await getWorkspaceChannel(workspace.id, currentChannelId);
-			} catch (e) {
-				console.error('Erreur lors de la récupération des salons du workspace:', e);
-				error('Erreur', 'Impossible de récupérer les salons du workspace');
-			}
-		};
-
-		fetchChannel();
-	});
 </script>
 
-{#if currentChannel && workspace}
-	<div class="flex flex-col gap-y-4">
-		<div class="flex items-center gap-x-4 bg-gray-100 p-4 dark:bg-gray-800">
-			<a href="/workspaces?workspaceId={workspace.id}" class="flex">
-				<ChevronLeft size={30} />
-			</a>
+<div class="relative w-full h-screen flex flex-col gap-y-4 flex-1 overflow-auto">
+	{#if otherUserProfile}
+		<div class="flex items-center justify-between gap-x-2 bg-gray-100 dark:bg-gray-800 p-4">
+			<div class="flex items-center gap-x-4 bg-gray-100 p-4 dark:bg-gray-800">
+				<a href="/chat" class="text-muted-foreground hover:text-primary">
+					<ChevronLeft size={30} />
+				</a>
+			</div>
 			<div class="flex items-center gap-x-2">
-				<span class="text-2xl font-semibold">#{currentChannel.name}</span>
-				<span class="text-muted-foreground text-md translate-y-[1px]">{currentChannel.topic}</span>
+				<div class="relative size-12">
+					<Avatar.Root>
+						<Avatar.Image
+							src={getS3ObjectUrl(S3Bucket.USERS_AVATARS, otherUserProfile.id)}
+						/>
+						<Avatar.Fallback
+						>{fallbackAvatarLetters(
+							otherUserProfile.firstName + " " + otherUserProfile.lastName,
+						)}</Avatar.Fallback
+						>
+					</Avatar.Root>
+					<span
+						class={cn("rounded-full absolute bottom-2 right-2 size-3", {
+								"bg-green-500": otherUserProfile.status === PublicStatus.ONLINE,
+								"bg-yellow-500": otherUserProfile.status === PublicStatus.AWAY,
+								"bg-red-500":
+									otherUserProfile.status === PublicStatus.DO_NOT_DISTURB,
+								"bg-gray-500": otherUserProfile.status === PublicStatus.OFFLINE,
+							})}
+					>
+						</span>
+				</div>
+
+				<div class="flex flex-col overflow-hidden">
+						<span class="font-semibold text-base truncate">
+							{otherUserProfile.firstName} {otherUserProfile.lastName}
+						</span>
+					<span class="text-sm text-gray-500 truncate">{otherUserProfile.email}</span>
+				</div>
 			</div>
 		</div>
-	</div>
+	{/if}
 
+	<div class="flex-1 overflow-y-auto px-3 py-2 space-y-4" bind:this={elementsList}>
 
-	<div
-		class="flex-1 overflow-y-auto px-4 space-y-4 flex flex-col"
-		bind:this={elementsList}
-	>
 		{#if currentRoom.id !== null}
 			<!-- Sentinel en haut -->
 			<div bind:this={topSentinel} class="sentinel mt-4"></div>
@@ -432,74 +425,24 @@
 									</div>
 								{/snippet}
 
-								{#if message.author !== null && message.author.userId !== authenticatedUser.id}
-									<div class="flex flex-col">
-										<div class="flex items-center gap-2">
-											<HoveredUserProfile
-												userId={message.author.userId}
-												self={false}
-											>
-                        <span class="font-semibold"
-												>{message.author.workspacePseudo}</span
-												>
-											</HoveredUserProfile>
-											<Tooltip>
-												<TooltipTrigger>
-                          <span class="text-sm text-gray-500">
-                            {formatDate(message.createdAt)}
-                          </span>
-												</TooltipTrigger>
-												<TooltipContent>
-													{format(
-														new Date(message.createdAt),
-														"EEEE d MMMM yyyy à HH:mm",
-														{ locale: fr },
-													)}
-												</TooltipContent>
-											</Tooltip>
+								{#if message.author.userId !== authenticatedUser.id}
+									<div>
+										<div class="text-sm font-medium">
+											{message.author.firstName} {message.author.lastName}
 										</div>
-										<div class="flex flex-col gap-y-2">
-											<div class="flex items-center gap-2">
-                        <span
-													class="p-2 rounded-xl break-all bg-primary text-white shadow-lg"
-												>
-                          {message.content}
-                        </span>
-											</div>
-											{@render messageReaction()}
+										<div class="bg-muted px-3 py-2 rounded-xl shadow text-sm mt-1">
+											{message.content}
 										</div>
+										<div class="text-xs text-gray-400 mt-1">{formatDate(message.createdAt)}</div>
+										{@render messageReaction()}
 									</div>
-								{/if}
-
-								{#if message.author.userId === authenticatedUser.id}
-									<div class="flex flex-col">
-										<div class="flex flex-col gap-y-2">
-											<div class="flex items-end gap-2 justify-end">
-												<div class="flex flex-col items-end gap-y-2">
-													<Tooltip>
-														<TooltipTrigger class="text-left">
-                              <span class="text-sm text-gray-500">
-                                {formatDate(message.createdAt)}
-                              </span>
-														</TooltipTrigger>
-														<TooltipContent>
-															{format(
-																new Date(message.createdAt),
-																"EEEE d MMMM yyyy à HH:mm",
-																{ locale: fr },
-															)}
-														</TooltipContent>
-													</Tooltip>
-													<span
-														class="p-2 rounded-xl break-all bg-primary text-white shadow-lg w-full"
-													>
-                            {message.content}
-                          </span>
-												</div>
-											</div>
-
-											{@render messageReaction()}
+								{:else}
+									<div class="max-w-[70%] text-right">
+										<div class="rounded-2xl px-4 py-2 bg-primary text-white text-sm shadow inline-block">
+											{message.content}
 										</div>
+										<div class="text-xs text-gray-400 mt-1">{formatDate(message.createdAt)}</div>
+										{@render messageReaction()}
 									</div>
 								{/if}
 							</div>
@@ -523,7 +466,8 @@
 							<ContextMenu.Sub>
 								<ContextMenu.SubTrigger
 								>Ajouter une réaction
-								</ContextMenu.SubTrigger>
+								</ContextMenu.SubTrigger
+								>
 								<ContextMenu.SubContent class="min-w-max">
 									{#each ["😉", "😎", "😢"] as emoji}
 										<ContextMenu.Item
@@ -563,35 +507,27 @@
 		{/if}
 	</div>
 
-	{#if currentChannel}
-		<div class="sticky bottom-0 z-20 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 px-4 py-3 flex items-center gap-2">
+	{#if otherUserProfile}
 		<div
-				class="flex-1 p-2 rounded-lg bg-white dark:bg-gray-700 min-h-[40px] max-h-32 overflow-y-auto break-all cursor-text"
+			class="sticky bottom-0 z-20 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 px-4 py-3 flex items-center gap-2">
+			<div
+				class="flex-1 min-h-[40px] max-h-32 overflow-y-auto rounded-lg bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none"
 				contenteditable
-				placeholder="Écrivez un message dans #{currentChannel.name}"
+				placeholder="Écrivez un message à {otherUserProfile.firstName}"
 				bind:this={inputElement}
 				bind:innerText={currentMessage}
 				onkeydown={handleInputKeyDown}
-				autofocus
 			></div>
-
-			<!--      button langage -->
-			<button
-				class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-				onclick={handleLanguageButtonClick}
-			>
+			<button class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700" onclick={handleLanguageButtonClick}>
 				<Languages size={20} class="text-primary" />
 			</button>
-
-			<button
-				class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-				onclick={sendMessageToWs}
-			>
+			<button class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700" onclick={sendMessageToWs}>
 				<Send size={20} class="text-primary" />
 			</button>
+
 		</div>
 	{/if}
-{/if}
+</div>
 
 <style>
     .sentinel {
