@@ -11,7 +11,6 @@
 	import ws from '$lib/api/ws';
 	import '$lib/assets/styles/chats.scss';
 	import HoveredUserProfile from '$lib/components/app/HoveredUserProfile.svelte';
-	import { Button } from '$lib/components/ui/button';
 	import * as ContextMenu from '$lib/components/ui/context-menu';
 	import { Tooltip, TooltipContent, TooltipTrigger } from '$lib/components/ui/tooltip';
 	import { error } from '$lib/toast/toast';
@@ -27,7 +26,6 @@
 	import { currentWorkspaceState } from '../currentWorkspace.svelte';
 	import { getWorkspaceMembers } from '$lib/api/workspace/member';
 	import * as Drawer from '$lib/components/ui/drawer/index.js';
-	import General from '$lib/components/app/workspace/workspaceSettings/general/General.svelte';
 	import { Button } from '$lib/components/ui/button';
 
 	const { authenticatedUserState } = page.data as {
@@ -49,7 +47,6 @@
 		messages: []
 	});
 	let channelMembers: { id: string; name: string }[] = $state([]);
-	let dropdownOpen = $state(false);
 
 	let unsubscribeSendMessage: (() => void) | null = null;
 	let unsubscribeMessageReactionAdded: (() => void) | null = null;
@@ -369,9 +366,12 @@
 			>
 				<Drawer.Trigger>
 					<Button
-						class="bg-primary/90 hover:bg-primary mb-4 flex w-full items-center justify-center gap-2 rounded-lg py-4 text-base font-medium text-white shadow-sm transition-all duration-300 hover:shadow-md"
-					>
-						Général
+						variant="outline"
+						size="sm"
+						class="flex items-center gap-1"
+						>
+						<UserIcon size={18} class="text-primary" />
+						Membres
 					</Button>
 				</Drawer.Trigger>
 				<Drawer.Portal>
@@ -380,7 +380,7 @@
 						<Drawer.Content class="h-screen bg-background flex flex-col p-4">
 							<Drawer.Header>
 								<div class="flex items-center gap-2">
-									<Drawer.Title>Paramètres</Drawer.Title>
+									<Drawer.Title>Membres</Drawer.Title>
 									<Drawer.Description class="flex flex-col gap-1 text-muted-foreground">
 										Liste des membres du canal
 									</Drawer.Description>
