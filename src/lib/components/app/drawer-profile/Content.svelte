@@ -27,11 +27,13 @@
 </script>
 
 <div class="flex flex-col gap-1 justify-start items-start">
-	<div class="px-4 w-full">
+	<div class="px-3 w-full">
 		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
-			<Drawer.Trigger class={cn(buttonVariants({ variant: "option" }), "text-gray-800 justify-start")}>
-				<Smile />
-				Quel est votre statut ?
+			<Drawer.Trigger>
+				<Button variant="option" size="sm" class="text-gray-800 justify-start">
+					<Smile />
+					Quel est votre statut ?
+				</Button>
 			</Drawer.Trigger>
 			<Drawer.Portal>
 				<Drawer.Overlay class="fixed inset-0 bg-black/40" />
@@ -54,7 +56,7 @@
 		<Button
 			variant="option"
 			size="sm"
-			class="text-gray-800 justify-start"
+			class="text-gray-800"
 			onclick={() => selectStatus(authenticatedUserState.user.status === PrivateStatus.AWAY ? PrivateStatus.ONLINE : PrivateStatus.AWAY)}
 		>
 			{#if authenticatedUserState.user.status === PrivateStatus.AWAY}
