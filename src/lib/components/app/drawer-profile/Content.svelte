@@ -1,5 +1,4 @@
 <script lang="ts">
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import { changeUserStatus, PrivateStatus } from '$lib/api/user';
 	import { page } from '$app/state';
 	import type { AuthenticatedUserState } from '../../../../routes/(auth)/authenticatedUser.svelte';
@@ -12,6 +11,7 @@
 	import ContentUserAdmin from '$lib/components/app/drawer-admin/user/ContentUserAdmin.svelte';
 	import ContentPostesAdmin from '$lib/components/app/drawer-admin/postes/ContentPostesAdmin.svelte';
 	import ContentInvitationsAdmin from '$lib/components/app/drawer-admin/invitations/ContentInvitationsAdmin.svelte';
+	import ContentStatut from '$lib/components/app/drawer-profile/ContentStatut.svelte';
 
 
 
@@ -28,45 +28,21 @@
 
 <div class="flex flex-col gap-1 justify-start items-start">
 	<div class="px-4 w-full">
-		<DropdownMenu.Root>
-			<DropdownMenu.Trigger class={cn(buttonVariants({ variant: "option" }), "text-gray-800 justify-start")}>
+		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
+			<Drawer.Trigger class={cn(buttonVariants({ variant: "option" }), "text-gray-800 justify-start")}>
 				<Smile />
 				Quel est votre statut ?
-			</DropdownMenu.Trigger>
-			<DropdownMenu.Content class="min-w-[200px]">
-				<DropdownMenu.Group>
-					<DropdownMenu.GroupHeading>Status</DropdownMenu.GroupHeading>
-					<DropdownMenu.Item
-						class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-						onclick={() => selectStatus(PrivateStatus.ONLINE)}
-					>
-						<span class="w-3 h-3 bg-green-500 rounded-full"></span>
-						Connecté
-					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-						onclick={() => selectStatus(PrivateStatus.AWAY)}
-					>
-						<span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
-						Absent
-					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-						onclick={() => selectStatus(PrivateStatus.DO_NOT_DISTURB)}
-					>
-						<span class="w-3 h-3 bg-red-500 rounded-full"></span>
-						Ne pas déranger
-					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						class="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-						onclick={() => selectStatus(PrivateStatus.INVISIBLE)}
-					>
-						<span class="w-3 h-3 bg-gray-500 rounded-full"></span>
-						Invisible
-					</DropdownMenu.Item>
-				</DropdownMenu.Group>
-			</DropdownMenu.Content>
-		</DropdownMenu.Root>
+			</Drawer.Trigger>
+			<Drawer.Portal>
+				<Drawer.Overlay class="fixed inset-0 bg-black/40" />
+				<Drawer.Content
+					class="fixed right-0 bottom-0 left-0 mt-24 flex h-full max-h-[96%] flex-col rounded-t-[10px]"
+				>
+					<ContentStatut />
+				</Drawer.Content>
+			</Drawer.Portal>
+		</Drawer.NestedRoot>
+
 	</div>
 
 	<div class="px-4 flex flex-col gap-2 justify-start items-start w-full">
@@ -123,9 +99,11 @@
 			<Drawer.Portal>
 				<Drawer.Overlay class="fixed inset-0 bg-black/40" />
 				<Drawer.Content
-					class="fixed right-0 bottom-0 left-0 mt-24 flex h-full max-h-[96%] flex-col rounded-t-[10px]"
+					class="bg-white flex flex-col fixed bottom-0 left-0 right-0 max-h-[96%] rounded-t-[10px]"
 				>
-					<ContentPostesAdmin />
+					<div class="max-w-md w-full mx-auto flex flex-col overflow-auto p-4 rounded-t-[10px]">
+						<ContentPostesAdmin />
+					</div>
 				</Drawer.Content>
 			</Drawer.Portal>
 		</Drawer.NestedRoot>

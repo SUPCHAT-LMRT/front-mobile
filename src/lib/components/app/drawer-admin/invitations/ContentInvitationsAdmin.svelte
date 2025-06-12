@@ -109,7 +109,7 @@
 	};
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6 px-2">
 	<div class="flex justify-between items-center">
 		<h2 class="text-xl font-semibold text-gray-700">Gestion des invitations</h2>
 	</div>

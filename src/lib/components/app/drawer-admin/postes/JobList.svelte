@@ -81,7 +81,7 @@
     };
 </script>
 
-<ScrollArea class="h-[400px] pr-4">
+<ScrollArea class="pr-4">
     <div class="space-y-2">
         {#if loading}
             <p>Chargement des postes...</p>
