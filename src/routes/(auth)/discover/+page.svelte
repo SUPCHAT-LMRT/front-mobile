@@ -56,7 +56,7 @@
 	};
 </script>
 
-<div class="flex h-full w-full flex-col dark:bg-gray-800">
+<div class="flex h-full w-full flex-col dark:bg-gray-800 overflow-y-auto pb-12">
 	<div class="from-primary bg-gradient-to-r from-50% to-[#94bfc9] px-8 py-16 text-white">
 		<div class="mx-auto max-w-6xl">
 			<h1 class="mb-6 text-5xl font-extrabold tracking-wide uppercase">
