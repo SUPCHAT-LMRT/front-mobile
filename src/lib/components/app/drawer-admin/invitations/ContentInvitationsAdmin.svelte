@@ -95,7 +95,7 @@
 	function shortenLink(link: string): string {
 		const maxLength = 40;
 		return link.length > maxLength
-			? link.slice(0, 40) + "..." + link.slice(-5)
+			? link.slice(0, 20) + "..." + link.slice(-5)
 			: link;
 	}
 	const copyInviteLink = () => {
