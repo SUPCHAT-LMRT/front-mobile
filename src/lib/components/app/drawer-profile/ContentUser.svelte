@@ -1,12 +1,16 @@
 <script lang="ts">
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3.js';
 	import {fallbackAvatarLetters} from "$lib/utils/fallbackAvatarLetters.js";
+	import { Input } from "$lib/components/ui/input/index.js";
 
 	import * as ImageCropper from '$lib/components/extra/ui/image-cropper';
+	import { Button } from "$lib/components/ui/button/index.js";
+	import * as AlertDialog from "$lib/components/ui/alert-dialog/index.js";
 	import * as Avatar from "$lib/components/ui/avatar";
 	import { error, success } from '$lib/toast/toast.js';
 	import { getFileFromUrl } from '$lib/components/extra/ui/image-cropper';
 	import { type User, updateUserAvatar } from '$lib/api/user';
+	import { Download } from 'lucide-svelte';
 
 	const {authenticatedUser}: { authenticatedUser: User } = $props();
 	let forceRenderAvatar = $state(Date.now());
@@ -36,7 +40,7 @@
 		<ImageCropper.Root onCropped={handleAvatarCrop}>
 			<ImageCropper.UploadTrigger>
 				<Avatar.Root
-					class="size-20 rounded-xl border-2 border-gray-200 cursor-pointer transition-opacity">
+					class="size-30 rounded-xl border-2 border-gray-200 cursor-pointer transition-opacity">
 					<Avatar.Image
 						src={`${getS3ObjectUrl(S3Bucket.USERS_AVATARS, authenticatedUser.id)}?${forceRenderAvatar}`}
 					/>
@@ -61,5 +65,57 @@
 				</ImageCropper.Controls>
 			</ImageCropper.Dialog>
 		</ImageCropper.Root>
+	</div>
+	<div class="mt-4 w-full px-4">
+		<Input
+			type="text"
+			value={authenticatedUser.firstName}
+			placeholder="Prénom"
+			class="w-full mb-2"
+			disabled
+		/>
+		<Input
+			type="text"
+			value={authenticatedUser.lastName}
+			placeholder="Nom"
+			class="w-full"
+			disabled
+		/>
+		<Input
+			type="email"
+			value={authenticatedUser.email}
+			placeholder="Email"
+			class="w-full mt-2"
+			disabled
+		/>
+	</div>
+
+	<div class="mt-4 w-full px-4">
+
+		<Button variant="outline" size="sm" class="w-full mb-2">
+			<Download />
+			Exporter mes données
+		</Button>
+
+		<AlertDialog.Root >
+			<AlertDialog.Trigger class="w-full mb-2">
+				<Button variant="outline" size="sm" class="w-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors" >
+					Supprimer mes données
+				</Button>
+			</AlertDialog.Trigger>
+			<AlertDialog.Content>
+				<AlertDialog.Header>
+					<AlertDialog.Title>Etes-vous sûr ?</AlertDialog.Title>
+					<AlertDialog.Description>
+						Cette action supprimera définitivement vos données de l'application. Vous ne pourrez pas
+						les récupérer.
+					</AlertDialog.Description>
+				</AlertDialog.Header>
+				<AlertDialog.Footer>
+					<AlertDialog.Cancel>Annuler</AlertDialog.Cancel>
+					<AlertDialog.Action class="bg-white border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors">Supprimer</AlertDialog.Action>
+				</AlertDialog.Footer>
+			</AlertDialog.Content>
+		</AlertDialog.Root>
 	</div>
 </div>

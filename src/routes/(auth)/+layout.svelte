@@ -48,8 +48,8 @@
 	<a href={path} class="flex items-center text-slate-800 dark:text-slate-200">
 		<Icon
 			class="mr-2 size-6 {cn({
-				'text-primary': page.url.pathname === path
-			})}"
+     'text-primary': page.url.pathname === path
+    })}"
 			strokeWidth={page.url.pathname === path ? 2.8 : 2}
 		/>
 	</a>
@@ -88,8 +88,9 @@
 					</Drawer.Header>
 					<Content />
 					<Drawer.Footer>
-						<Button>Submit</Button>
-						<Drawer.Close>Cancel</Drawer.Close>
+						<a href="/logout" class="w-full">
+							<Button variant="outline" class="w-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors">Déconnexion</Button>
+						</a>
 					</Drawer.Footer>
 				</Drawer.Content>
 			</Drawer.Overlay>
