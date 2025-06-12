@@ -10,6 +10,7 @@
 		WorkspaceType,
 		type Workspace
 	} from '$lib/api/workspace/workspace';
+	import ws from '$lib/api/ws';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -24,7 +25,6 @@
 	import { AxiosError } from 'axios';
 	import type { AuthenticatedUserState } from '../authenticatedUser.svelte';
 	import { currentWorkspaceState } from './currentWorkspace.svelte';
-	import ws from '$lib/api/ws';
 
 	const { children } = $props();
 	const { authenticatedUserState } = page.data as {
@@ -57,7 +57,7 @@
 		};
 
 		$effect(() => {
-			return ws.subscribe("workspace-updated", (msg) => {
+			return ws.subscribe('workspace-updated', (msg) => {
 				if (msg.workspaceId === workspace?.id) {
 					workspace = {
 						...workspace!,
@@ -136,10 +136,7 @@
 						{#key workspace}
 							<Avatar.Root class="size-12 rounded-3xl bg-gray-200">
 								<Avatar.Image
-									src="{getS3ObjectUrl(
-                    S3Bucket.WORKSPACES_ICONS,
-                    workspace.id,
-                  )}?{forceRenderIcon}"
+									src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)}?{forceRenderIcon}"
 									alt={workspace.name}
 									class="h-full w-full object-cover"
 								/>
