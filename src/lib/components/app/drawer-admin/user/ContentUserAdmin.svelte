@@ -118,6 +118,7 @@
 	}
 </script>
 
+
 <div class="space-y-6 px-2">
 	<div class="flex justify-between items-center">
 		<h2 class="text-xl font-semibold text-gray-700">Gestion des utilisateurs</h2>
@@ -133,8 +134,9 @@
 				<TableHeader>
 					<TableRow>
 						<TableHead>Avatar</TableHead>
-						<TableHead>Nom</TableHead>
-						<TableHead>Email</TableHead>
+						<TableHead>
+								<span class="font-medium">Nom / Email</span>
+						</TableHead>
 						<TableHead class="text-right">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
@@ -153,8 +155,12 @@
 									</Avatar.Fallback>
 								</Avatar.Root>
 							</TableCell>
-							<TableCell>{user.name}</TableCell>
-							<TableCell>{user.email}</TableCell>
+							<TableCell>
+								<div class="flex flex-col">
+									<span class="font-medium text-gray-800">{user.name}</span>
+									<span class="text-sm text-gray-500">{user.email}</span>
+								</div>
+							</TableCell>
 							<TableCell class="text-right">
 								<DropdownMenu
 									open={openMenuFor === user.id}

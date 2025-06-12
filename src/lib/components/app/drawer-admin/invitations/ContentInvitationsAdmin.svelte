@@ -14,7 +14,7 @@
 		DropdownMenuItem,
 		DropdownMenuTrigger
 	} from "$lib/components/ui/dropdown-menu";
-	import {ClipboardCopy, MoreHorizontal, UserMinus} from "lucide-svelte";
+	import { ClipboardCopy, MoreHorizontal, Plus, UserMinus } from 'lucide-svelte';
 	import {getInviteLink, deleteInviteLink, createInviteLink} from "$lib/api/admin";
 	import { writable } from "svelte/store";
 
@@ -121,7 +121,7 @@
 				<CardDescription>Gérez les invitations de votre application</CardDescription>
 				<Dialog.Root bind:open={isDialogOpen}>
 					<Dialog.Trigger class={buttonVariants({ variant: "outline" })}>
-						Inviter un utilisateur
+						<Plus />
 					</Dialog.Trigger>
 					<Dialog.Content class="sm:max-w-[425px]">
 						<Dialog.Header>
