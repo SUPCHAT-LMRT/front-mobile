@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { RoomKind } from '$lib/api/room';
-	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
 	import {
 		type Channel,
-		type ChannelMessage,
+		type ChannelMessage, getPrivateChannelMembers,
 		getWorkspaceChannel,
 		getWorkspaceChannelMessages
 	} from '$lib/api/workspace/channels';
 	import ws from '$lib/api/ws';
 	import '$lib/assets/styles/chats.scss';
 	import HoveredUserProfile from '$lib/components/app/HoveredUserProfile.svelte';
-	import * as Avatar from '$lib/components/ui/avatar';
 	import * as ContextMenu from '$lib/components/ui/context-menu';
 	import {
 		Tooltip,
@@ -19,18 +17,20 @@
 		TooltipTrigger
 	} from '$lib/components/ui/tooltip';
 	import { cn } from '$lib/utils';
-	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters.js';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { scrollToBottom } from '$lib/utils/scrollToBottom';
 	import NumberFlow from '@number-flow/svelte';
 	import { format } from 'date-fns';
 	import { fr } from 'date-fns/locale';
-	import { ChevronLeft, Languages, Pen, Send, Trash2 } from 'lucide-svelte';
+	import { ChevronLeft, Languages, Pen, Send, Trash2, UserIcon } from 'lucide-svelte';
 	import { onDestroy, tick } from 'svelte';
 	import type { AuthenticatedUserState } from '../../authenticatedUser.svelte';
 	import type { Workspace } from '$lib/api/workspace/workspace';
 	import { currentWorkspaceState } from '../currentWorkspace.svelte';
-	import { error } from '@sveltejs/kit';
+	import { getWorkspaceMembers } from '$lib/api/workspace/member';
+	import * as Drawer from '$lib/components/ui/drawer/index.js';
+	import General from '$lib/components/app/workspace/workspaceSettings/general/General.svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	const { authenticatedUserState } = page.data as {
 		authenticatedUserState: AuthenticatedUserState;
@@ -52,6 +52,8 @@
 		id: null,
 		messages: []
 	});
+	let channelMembers: { id: string; name: string }[] = $state([]);
+	let dropdownOpen = $state(false);
 
 	let unsubscribeSendMessage = null;
 	let unsubscribeMessageReactionAdded = null;
@@ -86,6 +88,26 @@
 			currentRoom.messages = [];
 		};
 	});
+
+	const loadMembers = async () => {
+		try {
+			if (!currentWorkspaceId || !currentChannelId || !currentChannel) return;
+
+			if (currentChannel.isPrivate) {
+				channelMembers = await getPrivateChannelMembers(currentWorkspaceId, currentChannelId);
+			} else {
+				const res = await getWorkspaceMembers(currentWorkspaceId, 1, 50);
+				channelMembers = res.members.map((m) => ({
+					id: m.userId,
+					name: m.pseudo
+				}));
+			}
+
+		} catch (err) {
+			console.error('Erreur lors du chargement des membres :', err);
+		}
+	};
+
 
 	const joinRoomAndListenMessages = async (
 		workspaceId: string,
@@ -366,7 +388,6 @@
 				currentChannel = await getWorkspaceChannel(workspace.id, currentChannelId);
 			} catch (e) {
 				console.error('Erreur lors de la récupération des salons du workspace:', e);
-				error('Erreur', 'Impossible de récupérer les salons du workspace');
 			}
 		};
 
@@ -375,8 +396,8 @@
 </script>
 
 {#if currentChannel && workspace}
-	<div class="flex flex-col gap-y-4">
-		<div class="flex items-center gap-x-4 bg-gray-100 p-4 dark:bg-gray-800">
+	<div class="flex justify-between gap-y-4 bg-gray-100 p-4 dark:bg-gray-800">
+		<div class="flex items-center gap-x-4">
 			<a href="/workspaces?workspaceId={workspace.id}" class="flex">
 				<ChevronLeft size={30} />
 			</a>
@@ -384,6 +405,62 @@
 				<span class="text-2xl font-semibold">#{currentChannel.name}</span>
 				<span class="text-muted-foreground text-md translate-y-[1px]">{currentChannel.topic}</span>
 			</div>
+		</div>
+		<div class="flex items-center gap-2 mt-2">
+
+			<Drawer.Root
+				shouldScaleBackground={true}
+				onOpenChange={(open) => {
+    if (open) {
+      loadMembers();
+    }
+  }}
+			>
+				<Drawer.Trigger>
+					<Button
+						class="bg-primary/90 hover:bg-primary mb-4 flex w-full items-center justify-center gap-2 rounded-lg py-4 text-base font-medium text-white shadow-sm transition-all duration-300 hover:shadow-md"
+					>
+						Général
+					</Button>
+				</Drawer.Trigger>
+				<Drawer.Portal>
+					<Drawer.Overlay class="fixed inset-0 bg-black/40">
+
+						<Drawer.Content class="h-screen bg-background flex flex-col p-4">
+							<Drawer.Header>
+								<div class="flex items-center gap-2">
+									<Drawer.Title>Paramètres</Drawer.Title>
+									<Drawer.Description class="flex flex-col gap-1 text-muted-foreground">
+										Liste des membres du canal
+									</Drawer.Description>
+								</div>
+							</Drawer.Header>
+
+							<div class="flex-grow overflow-auto">
+								{#if channelMembers.length > 0}
+									<ul class="space-y-2">
+										{#each channelMembers as member (member.id)}
+											<li class="flex items-center gap-2 rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-default">
+												<UserIcon class="w-5 h-5 text-primary" />
+												<HoveredUserProfile
+													userId={member.id}
+													self={false}
+												>
+													<span>{member.name}</span>
+												</HoveredUserProfile>
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="text-sm text-muted-foreground">Aucun membre trouvé.</p>
+								{/if}
+							</div>
+						</Drawer.Content>
+
+					</Drawer.Overlay>
+				</Drawer.Portal>
+
+			</Drawer.Root>
 		</div>
 	</div>
 
@@ -564,8 +641,9 @@
 	</div>
 
 	{#if currentChannel}
-		<div class="sticky bottom-0 z-20 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 px-4 py-3 flex items-center gap-2">
 		<div
+			class="sticky bottom-0 z-20 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 px-4 py-3 flex items-center gap-2">
+			<div
 				class="flex-1 p-2 rounded-lg bg-white dark:bg-gray-700 min-h-[40px] max-h-32 overflow-y-auto break-all cursor-text"
 				contenteditable
 				placeholder="Écrivez un message dans #{currentChannel.name}"

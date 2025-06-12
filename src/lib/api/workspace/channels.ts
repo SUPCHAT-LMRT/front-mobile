@@ -163,3 +163,21 @@ export const deleteWorkspaceChannel = async (
 		throw e;
 	}
 };
+
+export const getPrivateChannelMembers = async (
+	workspaceId: string,
+	channelId: string,
+): Promise<{ id: string; name: string }[]> => {
+	try {
+		const { data } = await baseClient.get(
+			`/api/workspaces/${workspaceId}/channels/${channelId}/members`,
+		);
+		return data.map((member: { userId: string; username: string }) => ({
+			id: member.userId,
+			name: member.username,
+		}));
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+};

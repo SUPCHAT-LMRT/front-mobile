@@ -265,12 +265,13 @@
 
 					<div class="space-y-1">
 						{#each privateChannels as channel}
-							<button
-								class="hover:bg-accent flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
+							<a
+								href="/workspaces/channels?workspaceId={workspace.id}&channelId={channel.id}"
+								class="hover:bg-accent flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
 							>
-								<Hash size={18} class="text-primary" />
+								<Lock size={18} class="text-primary translate-y-0.5" />
 								<span>{channel.name}</span>
-							</button>
+							</a>
 						{:else}
 							<p class="text-muted-foreground">Aucun salon disponible</p>
 						{/each}
