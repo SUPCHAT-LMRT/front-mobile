@@ -9,7 +9,7 @@
 	import * as Avatar from "$lib/components/ui/avatar";
 	import { error, success } from '$lib/toast/toast.js';
 	import { getFileFromUrl } from '$lib/components/extra/ui/image-cropper';
-	import { type User, updateUserAvatar } from '$lib/api/user';
+	import { type User, updateUserAvatar, exportUserData } from '$lib/api/user';
 	import { Download } from 'lucide-svelte';
 
 	const {authenticatedUser}: { authenticatedUser: User } = $props();
@@ -33,6 +33,17 @@
 		const file = await getFileFromUrl(url);
 		await updateAvatar(file);
 	};
+
+	const handleExportData = async () => {
+		try {
+			await exportUserData(authenticatedUser.id);
+			success("Export réussi", "Vos données ont été exportées avec succès.");
+		} catch (e) {
+			console.error(e);
+			error("Erreur", "Une erreur est survenue lors de l'exportation de vos données.");
+		}
+	};
+
 </script>
 
 <div class="flex flex-col gap-1 items-center justify-center">
@@ -92,7 +103,7 @@
 
 	<div class="mt-4 w-full px-4">
 
-		<Button variant="outline" size="sm" class="w-full mb-2">
+		<Button variant="outline" size="sm" class="w-full mb-2" onclick={handleExportData}>
 			<Download />
 			Exporter mes données
 		</Button>

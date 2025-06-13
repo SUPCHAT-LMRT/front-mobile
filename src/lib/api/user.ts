@@ -252,3 +252,21 @@ export const updateUser = async (
         throw e;
     }
 }
+
+export const exportUserData = async (userId: string): Promise<string> => {
+	try {
+		const {data} = await baseClient.get(`/api/account/export-data`, {
+			responseType: 'blob',
+		});
+		const url = window.URL.createObjectURL(new Blob([data]));
+		const link = document.createElement('a');
+		link.href = url;
+		link.setAttribute('download', `user_data_export_${userId}.json`);
+		document.body.appendChild(link);
+		link.click();
+		return url;
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+}
