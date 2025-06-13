@@ -12,8 +12,10 @@
 	import type { Component } from 'svelte';
 	import * as Tooltip from "$lib/components/ui/tooltip/index.js";
 
-	import { statusMap } from '$lib/api/user';
+	import { exportUserData, statusMap } from '$lib/api/user';
 	import type { AuthenticatedUserState } from './authenticatedUser.svelte';
+	import { Download } from 'lucide-svelte';
+	import { error, success } from '$lib/toast/toast';
 
 	const { authenticatedUserState } = page.data as {
 		authenticatedUserState: AuthenticatedUserState;
@@ -22,6 +24,16 @@
 	let firstName = $derived(authenticatedUserState.user.firstName);
 	let lastName = $derived(authenticatedUserState.user.lastName);
 	let { children } = $props();
+
+	const handleExportData = async () => {
+		try {
+			await exportUserData(authenticatedUserState.user.id);
+			success("Export réussi", "Vos données ont été exportées avec succès.");
+		} catch (e) {
+			console.error(e);
+			error("Erreur", "Une erreur est survenue lors de l'exportation de vos données.");
+		}
+	};
 </script>
 
 <ModeWatcher />
@@ -88,6 +100,10 @@
 					</Drawer.Header>
 					<Content />
 					<Drawer.Footer>
+						<Button variant="outline" size="sm" class="w-full mb-2" onclick={handleExportData}>
+							<Download />
+							Exporter mes données
+						</Button>
 						<a href="/logout" class="w-full">
 							<Button variant="outline" class="w-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors">Déconnexion</Button>
 						</a>
