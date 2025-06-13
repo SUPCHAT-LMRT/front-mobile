@@ -1,23 +1,24 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import {
-		getPolls,
-		votePoll,
-		unvotePoll,
-		type Poll,
-		createPoll, deletePoll
-	} from '$lib/api/workspace/polls';
 	import { page } from '$app/state';
-	import { notifyByLevel, success } from '$lib/toast/toast';
-	import * as Dialog from '$lib/components/ui/dialog';
+	import {
+		createPoll,
+		deletePoll,
+		getPolls,
+		unvotePoll,
+		votePoll,
+		type Poll
+	} from '$lib/api/workspace/polls';
 	import { Button } from '$lib/components/ui/button';
 	import * as Chart from '$lib/components/ui/chart/index.js';
-	import { PieChart, Text } from 'layerchart';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
+	import { notifyByLevel, success } from '$lib/toast/toast';
+	import { PieChart, Text } from 'layerchart';
 	import { MoreHorizontal } from 'lucide-svelte';
-	import { slide } from 'svelte/transition';
+	import { onMount } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
+	import { slide } from 'svelte/transition';
 
 	let currentWorkspaceId: string = $derived(page.url.searchParams.get('workspaceId') || '');
 	let polls: Poll[] = $state([]);
@@ -50,7 +51,12 @@
 	}
 
 	async function submitNewPoll() {
-		if (!currentWorkspaceId || !newQuestion.trim() || newOptions.length < 2 || newOptions.some(opt => !opt.trim())) {
+		if (
+			!currentWorkspaceId ||
+			!newQuestion.trim() ||
+			newOptions.length < 2 ||
+			newOptions.some((opt) => !opt.trim())
+		) {
 			notifyByLevel({
 				title: 'Erreur',
 				level: 'error',
@@ -77,18 +83,18 @@
 		}
 	}
 
-	async function Handle(pollId: string, optionId: string) {
+	async function handle(pollId: string, optionId: string) {
 		if (currentWorkspaceId) {
 			try {
 				await votePoll(currentWorkspaceId, pollId, optionId);
 				const response = await getPolls(currentWorkspaceId);
-				polls = response.map(poll => ({
+				polls = response.map((poll) => ({
 					...poll,
-					options: poll.options.map(opt => ({
+					options: poll.options.map((opt) => ({
 						...opt
 					}))
 				}));
-			} catch (error: never) {
+			} catch (error: any) {
 				console.error('Erreur lors du vote :', error);
 
 				if (error.response?.data?.code === 'ALREADY_VOTED') {
@@ -115,7 +121,7 @@
 			selectedPollOption = { pollId, optionId };
 			showUnvoteConfirmation = true;
 		} else {
-			await Handle(pollId, optionId);
+			await handle(pollId, optionId);
 		}
 	}
 
@@ -123,19 +129,19 @@
 		try {
 			await unvotePoll(currentWorkspaceId, selectedPollOption.pollId, selectedPollOption.optionId);
 			const response = await getPolls(currentWorkspaceId);
-			polls = response.map(poll => ({
+			polls = response.map((poll) => ({
 				...poll,
-				options: poll.options.map(opt => ({
+				options: poll.options.map((opt) => ({
 					...opt
 				}))
 			}));
 			success('Vote annulé', 'Votre vote a été annulé avec succès.');
 		} catch (error) {
-			console.error('Erreur lors de l\'annulation du vote :', error);
+			console.error("Erreur lors de l'annulation du vote :", error);
 			notifyByLevel({
 				title: 'Erreur',
 				level: 'error',
-				message: 'Une erreur est survenue lors de l\'annulation du vote.'
+				message: "Une erreur est survenue lors de l'annulation du vote."
 			});
 		} finally {
 			showUnvoteConfirmation = false;
@@ -181,10 +187,9 @@
 		pollToDelete = null;
 		showDeleteDialog = false;
 	}
-
 </script>
 
-<Dialog.Root open={showUnvoteConfirmation} onOpenChange={(open) => showUnvoteConfirmation = open}>
+<Dialog.Root open={showUnvoteConfirmation} onOpenChange={(open) => (showUnvoteConfirmation = open)}>
 	<Dialog.Content>
 		<Dialog.Header>
 			<Dialog.Title>Confirmer l'annulation du vote</Dialog.Title>
@@ -199,36 +204,47 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-<div class="flex flex-col w-full p-4 space-y-4 text-gray-900 dark:text-white h-full overflow-y-auto">
+<div
+	class="flex h-full w-full flex-col space-y-4 overflow-y-auto p-4 text-gray-900 dark:text-white"
+>
 	<div class="mb-2">
-		<Button variant="outline" onclick={() => showCreatePoll = !showCreatePoll}>
+		<Button variant="outline" onclick={() => (showCreatePoll = !showCreatePoll)}>
 			{showCreatePoll ? 'Réduire le formulaire' : 'Créer un sondage'}
 		</Button>
 	</div>
 
 	{#if showCreatePoll}
 		<div
-			class="bg-white dark:bg-gray-900 p-4 rounded-xl shadow-md space-y-4"
+			class="space-y-4 rounded-xl bg-white p-4 shadow-md dark:bg-gray-900"
 			transition:slide={{ duration: 300, easing: cubicOut }}
 		>
 			<h4 class="text-xl font-semibold">Créer un sondage</h4>
 			<Label for="question">Question du sondage</Label>
-			<Input id="question" bind:value={newQuestion} placeholder="Ex : Quel est votre langage préféré ?"
-						 class="text-sm py-2" />
+			<Input
+				id="question"
+				bind:value={newQuestion}
+				placeholder="Ex : Quel est votre langage préféré ?"
+				class="py-2 text-sm"
+			/>
 
 			<div class="space-y-2">
 				<Label class="text-sm">Question</Label>
-				<Input class="text-sm py-2" bind:value={newQuestion} placeholder="Ex : Langage préféré ?" />
+				<Input class="py-2 text-sm" bind:value={newQuestion} placeholder="Ex : Langage préféré ?" />
 
 				{#each newOptions as option, index}
 					<div class="flex items-center gap-2">
 						<Input
-							class="flex-1 text-sm py-2"
+							class="flex-1 py-2 text-sm"
 							bind:value={newOptions[index]}
 							placeholder={`Option ${index + 1}`}
 						/>
 						{#if index > 1}
-							<Button size="icon" variant="ghost" onclick={() => newOptions = newOptions.filter((_, i) => i !== index)}>
+							<Button
+								size="icon"
+								variant="ghost"
+								tabindex={-1}
+								onclick={() => (newOptions = newOptions.filter((_, i) => i !== index))}
+							>
 								❌
 							</Button>
 						{/if}
@@ -250,57 +266,61 @@
 	{:else}
 		<div class="flex flex-col space-y-4">
 			{#each polls as poll}
-				<div class="bg-white dark:bg-gray-800 rounded-xl p-3 space-y-3 border border-gray-200 dark:border-gray-700">
-					<div class="flex justify-between items-start mb-2">
-						<h2 class="text-base font-semibold pr-2 flex-1">{poll.question}</h2>
+				<div
+					class="space-y-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
+				>
+					<div class="mb-2 flex items-start justify-between">
+						<h2 class="flex-1 pr-2 text-base font-semibold">{poll.question}</h2>
 						<div class="flex items-center space-x-2">
 							<button
-								class="hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded-full transition"
+								class="rounded-full p-1 transition hover:bg-gray-200 dark:hover:bg-gray-700"
 								onclick={() => openDeleteDialog(poll)}
 								aria-label="Options"
 							>
-								<MoreHorizontal class="w-4 h-4 text-muted-foreground" />
+								<MoreHorizontal class="text-muted-foreground h-4 w-4" />
 							</button>
 						</div>
 					</div>
 					<div class="flex flex-col space-y-2">
 						{#each poll.options as option}
 							<button
-								class={`flex items-center justify-between px-3 py-2 rounded
-                                relative overflow-hidden
-                                ${option.is_voted
-                                    ? 'bg-transparent'
-                                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'}
-                                transition-colors w-full`}
+								class={`relative flex items-center justify-between overflow-hidden rounded
+                                px-3 py-2
+                                ${
+																	option.is_voted
+																		? 'bg-transparent'
+																		: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+																}
+                                w-full transition-colors`}
 								onclick={() => handleVoteAction(poll.id, option.id, option.is_voted)}
 							>
-								<div class={`absolute inset-0 transition-transform duration-500 ease-out
+								<div
+									class={`absolute inset-0 transition-transform duration-500 ease-out
                                 ${option.is_voted ? 'translate-x-0' : '-translate-x-full'}
-                                bg-primary`}>
-								</div>
+                                bg-primary`}
+								></div>
 								<span class="relative z-10 text-sm">{option.text}</span>
-								<span class={`relative z-10 text-xs font-medium ${option.is_voted
-                                    ? 'text-primary-foreground'
-                                    : 'text-gray-600 dark:text-gray-300'}`}>
-                                    {option.votes} vote{option.votes > 1 ? "s" : ""}
-                                </span>
+								<span
+									class={`relative z-10 text-xs font-medium ${
+										option.is_voted ? 'text-primary-foreground' : 'text-gray-600 dark:text-gray-300'
+									}`}
+								>
+									{option.votes} vote{option.votes > 1 ? 's' : ''}
+								</span>
 							</button>
 						{/each}
 					</div>
 
-					{#if poll.options.some(opt => opt.is_voted)}
+					{#if poll.options.some((opt) => opt.is_voted)}
 						<!-- VERSION MOBILE COMPACTE -->
-						<div class="mt-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-							<h3 class="text-sm font-medium mb-3 text-center">Résultats</h3>
+						<div class="mt-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-700/50">
+							<h3 class="mb-3 text-center text-sm font-medium">Résultats</h3>
 
 							<!-- Graphique compact avec légende séparée -->
-							<div class="flex flex-col sm:flex-row items-center gap-4">
+							<div class="flex flex-col items-center gap-4 sm:flex-row">
 								<!-- Graphique circulaire plus petit -->
 								<div class="flex-shrink-0">
-									<Chart.Container
-										config={{}}
-										class="w-20 h-20"
-									>
+									<Chart.Container config={{}} class="h-20 w-20">
 										<PieChart
 											data={poll.options.map((opt, index) => ({
 												option: opt.text,
@@ -313,7 +333,7 @@
 											c="color"
 											innerRadius={30}
 											props={{
-												pie: { motion: "tween" }
+												pie: { motion: 'tween' }
 											}}
 										>
 											{#snippet aboveMarks()}
@@ -340,16 +360,16 @@
 								</div>
 
 								<!-- Légende compacte à côté -->
-								<div class="flex-1 min-w-0">
+								<div class="min-w-0 flex-1">
 									<div class="space-y-1">
 										{#each poll.options as option, index}
 											{#if option.votes > 0}
 												<div class="flex items-center gap-2 text-xs">
 													<div
-														class="w-3 h-3 rounded-full flex-shrink-0"
+														class="h-3 w-3 flex-shrink-0 rounded-full"
 														style="background-color: {getColor(index)}"
 													></div>
-													<span class="truncate flex-1 font-medium">
+													<span class="flex-1 truncate font-medium">
 														{option.text}
 													</span>
 													<span class="font-semibold text-gray-600 dark:text-gray-300">
@@ -361,14 +381,18 @@
 									</div>
 
 									<!-- Pourcentages en dessous -->
-									<div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+									<div class="mt-2 border-t border-gray-200 pt-2 dark:border-gray-600">
 										{#each poll.options as option, index}
 											{#if option.votes > 0}
 												{@const totalVotes = poll.options.reduce((acc, opt) => acc + opt.votes, 0)}
-												{@const percentage = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0}
-												<div class="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-													<span
-														class="truncate pr-2">{option.text.slice(0, 15)}{option.text.length > 15 ? '...' : ''}</span>
+												{@const percentage =
+													totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0}
+												<div
+													class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
+												>
+													<span class="truncate pr-2"
+														>{option.text.slice(0, 15)}{option.text.length > 15 ? '...' : ''}</span
+													>
 													<span class="font-medium">{percentage}%</span>
 												</div>
 											{/if}
@@ -384,7 +408,7 @@
 	{/if}
 </div>
 
-<Dialog.Root open={showDeleteDialog} onOpenChange={(open) => showDeleteDialog = open}>
+<Dialog.Root open={showDeleteDialog} onOpenChange={(open) => (showDeleteDialog = open)}>
 	<Dialog.Content>
 		<Dialog.Header>
 			<Dialog.Title>Supprimer le sondage</Dialog.Title>
@@ -397,11 +421,11 @@
 			<Button
 				variant="destructive"
 				onclick={async () => {
-                    if (pollToDelete) {
-                        await handleDeletePoll(pollToDelete.id);
-                        closeDeleteDialog();
-                    }
-                }}
+					if (pollToDelete) {
+						await handleDeletePoll(pollToDelete.id);
+						closeDeleteDialog();
+					}
+				}}
 			>
 				Supprimer
 			</Button>
