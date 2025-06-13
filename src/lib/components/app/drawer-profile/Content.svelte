@@ -2,9 +2,7 @@
 	import { changeUserStatus, PrivateStatus } from '$lib/api/user';
 	import { page } from '$app/state';
 	import type { AuthenticatedUserState } from '../../../../routes/(auth)/authenticatedUser.svelte';
-	import { buttonVariants } from "$lib/components/ui/button/index.js";
 	import { Button } from "$lib/components/ui/button/index.js";
-	import { cn } from '$lib/utils';
 	import { BellOff, LaptopMinimal, Mail, Smile, User, UserCheck, UserX } from 'lucide-svelte';
 	import { Separator } from "$lib/components/ui/separator/index.js";
 	import * as Drawer from '$lib/components/ui/drawer/index.js';
@@ -12,6 +10,7 @@
 	import ContentPostesAdmin from '$lib/components/app/drawer-admin/postes/ContentPostesAdmin.svelte';
 	import ContentInvitationsAdmin from '$lib/components/app/drawer-admin/invitations/ContentInvitationsAdmin.svelte';
 	import ContentStatut from '$lib/components/app/drawer-profile/ContentStatut.svelte';
+	import ContentAuthentification from '$lib/components/app/drawer-profile/ContentAuthentification.svelte';
 
 
 
@@ -67,6 +66,23 @@
 				Me signaler absent(e)
 			{/if}
 		</Button>
+
+		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
+			<Drawer.Trigger>
+				<Button variant="option" size="sm" class="text-gray-800 justify-start">
+					<User />
+					Authentification
+				</Button>
+			</Drawer.Trigger>
+			<Drawer.Portal>
+				<Drawer.Overlay class="fixed inset-0 bg-black/40" />
+				<Drawer.Content
+					class="fixed right-0 bottom-0 left-0 mt-24 flex h-full max-h-[96%] flex-col rounded-t-[10px]"
+				>
+					<ContentAuthentification authenticatedUser={authenticatedUserState.user} />
+				</Drawer.Content>
+			</Drawer.Portal>
+		</Drawer.NestedRoot>
 	</div>
 
 	<Separator class="my-4" />
