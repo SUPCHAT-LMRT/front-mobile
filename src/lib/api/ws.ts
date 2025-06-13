@@ -75,8 +75,8 @@ class Ws {
 			console.log(
 				`WebSocket still connecting, queuing message ${message}...`,
 			);
+			this.messageQueue.push(message);
 		}
-		this.messageQueue.push(message);
 	};
 
 	private handleNewMessage = (event: any) => {
