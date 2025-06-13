@@ -3,12 +3,6 @@
 	import { Separator } from "$lib/components/ui/separator";
 	import { Badge } from "$lib/components/ui/badge";
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
-	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3.js';
-	import { type User } from '$lib/api/user';
-
-
-	const {authenticatedUser}: { authenticatedUser: User } = $props();
-	let forceRenderAvatar = $state(Date.now());
 </script>
 
 <div class="p-6 space-y-6">

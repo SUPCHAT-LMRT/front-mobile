@@ -11,6 +11,7 @@
 	import ContentInvitationsAdmin from '$lib/components/app/drawer-admin/invitations/ContentInvitationsAdmin.svelte';
 	import ContentStatut from '$lib/components/app/drawer-profile/ContentStatut.svelte';
 	import ContentAuthentification from '$lib/components/app/drawer-profile/ContentAuthentification.svelte';
+	import ContentNotification from '$lib/components/app/drawer-profile/ContentNotification.svelte';
 
 
 
@@ -47,10 +48,22 @@
 	</div>
 
 	<div class="px-4 flex flex-col gap-2 justify-start items-start w-full">
-		<Button variant="option" size="sm" class="text-gray-800 justify-start">
-			<BellOff />
-			Suspendre les notifications
-		</Button>
+		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
+			<Drawer.Trigger>
+				<Button variant="option" size="sm" class="text-gray-800 justify-start">
+					<BellOff />
+					Suspendre les notifications
+				</Button>
+			</Drawer.Trigger>
+			<Drawer.Portal>
+				<Drawer.Overlay class="fixed inset-0 bg-black/40" />
+				<Drawer.Content
+					class="fixed right-0 bottom-0 left-0 mt-24 flex h-full max-h-[96%] flex-col rounded-t-[10px]"
+				>
+					<ContentNotification />
+				</Drawer.Content>
+			</Drawer.Portal>
+		</Drawer.NestedRoot>
 
 		<Button
 			variant="option"
@@ -79,7 +92,7 @@
 				<Drawer.Content
 					class="fixed right-0 bottom-0 left-0 mt-24 flex h-full max-h-[96%] flex-col rounded-t-[10px]"
 				>
-					<ContentAuthentification authenticatedUser={authenticatedUserState.user} />
+					<ContentAuthentification />
 				</Drawer.Content>
 			</Drawer.Portal>
 		</Drawer.NestedRoot>
