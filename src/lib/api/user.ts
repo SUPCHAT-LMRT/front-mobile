@@ -174,6 +174,7 @@ export type UserProfile = {
     firstName: string;
     lastName: string;
     status: PublicStatus;
+    jobsNames: string;
 };
 
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {
@@ -198,7 +199,15 @@ export const changeUserStatus = async (
     }
 }
 
-export const listAllUsers = async (): Promise<User[]> => {
+export type ListAllUsersResponse = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    status: PublicStatus;
+}
+
+export const listAllUsers = async (): Promise<ListAllUsersResponse[]> => {
     try {
         const { data } = await baseClient.get("/api/account/users");
         return data;
@@ -254,19 +263,19 @@ export const updateUser = async (
 }
 
 export const exportUserData = async (userId: string): Promise<string> => {
-	try {
-		const {data} = await baseClient.get(`/api/account/export-data`, {
-			responseType: 'blob',
-		});
-		const url = window.URL.createObjectURL(new Blob([data]));
-		const link = document.createElement('a');
-		link.href = url;
-		link.setAttribute('download', `user_data_export_${userId}.json`);
-		document.body.appendChild(link);
-		link.click();
-		return url;
-	} catch (e) {
-		console.error(e);
-		throw e;
-	}
+    try {
+        const { data } = await baseClient.get(`/api/account/export-data`, {
+            responseType: 'blob',
+        });
+        const url = window.URL.createObjectURL(new Blob([data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `user_data_export_${userId}.json`);
+        document.body.appendChild(link);
+        link.click();
+        return url;
+    } catch (e) {
+        console.error(e);
+        throw e;
+    }
 }

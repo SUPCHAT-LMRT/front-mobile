@@ -9,6 +9,7 @@
 	import { StoreResultState, type StoreResult } from '$lib/stores/store.svelte';
 	import { cn } from '$lib/utils';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters.js';
+	import { goto } from '$lib/utils/goto';
 	import { onMount } from 'svelte';
 
 	let recentChats: StoreResult<any[]> = $state({
@@ -47,6 +48,45 @@
 			);
 		})
 	);
+
+	$effect(() =>
+		ws.subscribe(
+			'recent-direct-chat-added',
+			async (msg: { otherUserId: string; chatName: string }) => {
+				const recentChatStore = {
+					id: msg.otherUserId,
+					name: msg.chatName,
+					avatarUrl: '',
+					kind: RecentChatKind.DIRECT
+				} as RecentChatStore;
+				recentChatsStore.add(recentChatStore);
+
+				recentChats.data = [await convertRecentChat(recentChatStore), ...recentChats.data];
+			}
+		)
+	);
+
+	$effect(() =>
+		ws.subscribe('recent-group-chat-added', async (msg: { groupId: string; chatName: string }) => {
+			const recentChatStore = {
+				id: msg.groupId,
+				name: msg.chatName,
+				avatarUrl: '',
+				kind: RecentChatKind.GROUP
+			} as RecentChatStore;
+			recentChatsStore.add(recentChatStore);
+
+			recentChats.data = [await convertRecentChat(recentChatStore), ...recentChats.data];
+		})
+	);
+
+	$effect(() => {
+		return ws.subscribe('recent-group-chat-removed', async (msg: { groupId: string }) => {
+			recentChatsStore.remove(msg.groupId);
+			recentChats.data = recentChats.data.filter((chat) => chat.id !== msg.groupId);
+			goto('/chat');
+		});
+	});
 </script>
 
 <div class="p-4">
@@ -58,7 +98,10 @@
 		{/each}
 	{:else if recentChats.data.length > 0}
 		{#each recentChats.data as chat (chat.id)}
-			<a href={`/chat/${chat.kind.toLowerCase()}?chatId=${chat.id}`} class="mb-3 block">
+			<a
+				href={`/chat/${chat.kind.toLowerCase()}?${chat.kind === RecentChatKind.DIRECT ? 'chatId=' + chat.id : 'groupId=' + chat.id}`}
+				class="mb-3 block"
+			>
 				<div
 					class="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-md transition-all duration-200 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
 				>

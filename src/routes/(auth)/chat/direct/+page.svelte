@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { smartFly } from '$lib/animation/visibleFly.js';
 	import { type DirectMessage, getDirectMessages } from '$lib/api/direct/message.js';
 	import { RoomKind } from '$lib/api/room';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
@@ -340,8 +341,19 @@
 			<!-- Sentinel en haut -->
 			<div bind:this={topSentinel} class="sentinel mt-4"></div>
 
-			{#each currentRoom.messages as message (message.id)}
-				<div data-message-id={message.id}>
+			{#each currentRoom.messages as message, i (message.id)}
+				<div
+					data-message-id={message.id}
+					in:smartFly|global={{
+						y: -10,
+						duration: 300,
+						delay: 100,
+						isNewMessage: i >= Math.max(0, currentRoom.messages.length - 10),
+						messageIndex: i,
+						totalMessages: currentRoom.messages.length,
+						staggerDelay: 50 // 50ms delay between each message
+					}}
+				>
 					<ContextMenu.Root>
 						<ContextMenu.Trigger>
 							<div

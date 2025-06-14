@@ -39,6 +39,13 @@ class RecentChatsStore extends Store<RecentChatsStoreResult> {
             recentChats: [chat, ...this.getData().recentChats]
         });
     }
+
+    public async remove(chatId: string): Promise<void> {
+        // Remove the chat from the recent chats list
+        this.changeData({
+            recentChats: this.getData().recentChats.filter(chat => chat.id !== chatId)
+        });
+    }
 }
 
 export default new RecentChatsStore();
