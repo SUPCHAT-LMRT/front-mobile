@@ -10,12 +10,7 @@
 	import { listGroupMessages, type GroupMessage } from '$lib/api/group/message';
 	import { RoomKind } from '$lib/api/room';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
-	import {
-		listAllUsers,
-		PublicStatus,
-		type ListAllUsersResponse,
-		type UserProfile
-	} from '$lib/api/user';
+	import { listAllUsers, PublicStatus, type ListAllUsersResponse } from '$lib/api/user';
 	import ws from '$lib/api/ws';
 	import '$lib/assets/styles/chats.scss';
 	import HoveredUserProfile from '$lib/components/app/HoveredUserProfile.svelte';
@@ -54,8 +49,7 @@
 
 	// the chatId is the userId of the other user
 	let currentGroupId: string = $derived(page.url.searchParams.get('groupId') || '');
-	let groupInfo: GroupInfo = $state(null);
-	let otherUserProfile: UserProfile | null = $state(null);
+	let groupInfo: GroupInfo | null = $state(null);
 	let currentMessage = $state('');
 	let currentRoom: { id: string | null; messages: CustomGroupMessage[] } = $state({
 		id: null,
@@ -100,11 +94,6 @@
 	const LIMIT_LOAD = 50;
 	const MAX_MESSAGES = 75;
 
-	// Check if current user is admin
-	const isAdmin = $derived(
-		groupInfo?.members?.find((m) => m.userId === authenticatedUser.id)?.isGroupOwner || false
-	);
-
 	$effect(() => {
 		joinRoomAndListenMessages(currentGroupId);
 		getGroupInfo(currentGroupId).then((info) => {
@@ -137,7 +126,7 @@
 			allUsers = await listAllUsers();
 
 			// Filter out users who are already members
-			const userIds = new Set(groupInfo.members.map((m) => m.userId));
+			const userIds = new Set(groupInfo?.members.map((m) => m.userId));
 			allUsers = allUsers.filter((user) => !userIds.has(user.id));
 
 			selectedUserIds = new Set();
@@ -502,6 +491,33 @@
 		if (topObserver) topObserver.disconnect();
 		if (bottomObserver) bottomObserver.disconnect();
 	});
+
+	const handleMessageEdit = async (message: CustomGroupMessage) => {
+		// Toggle edit mode
+		message.editMode = !message.editMode;
+		if (message.editMode) {
+			await tick(); // Wait for the DOM to update
+			// Focus the input element if entering edit mode
+			message.editInputElement?.focus();
+		} else {
+			// Send the edited message
+			ws.editGroupMessage(currentGroupId, message.id, message.content);
+		}
+	};
+
+	const handleMessageDelete = async (message: CustomGroupMessage) => {
+		if (!message) return;
+
+		try {
+			await ws.deleteGroupMessage(currentGroupId, message.id);
+		} catch (e) {
+			console.error('Failed to delete message:', e);
+			error(
+				'Erreur lors de la suppression du message.',
+				'Impossible de supprimer le message, veuillez réessayer plus tard.'
+			);
+		}
+	};
 </script>
 
 <div class="relative flex h-screen w-full flex-1 flex-col gap-y-4 overflow-auto">
@@ -614,11 +630,26 @@
 									</div>
 								{:else}
 									<div class="max-w-[70%] text-right">
-										<div
-											class="bg-primary inline-block rounded-2xl px-4 py-2 text-sm text-white shadow"
-										>
-											{message.content}
-										</div>
+										{#if message.editMode}
+											<input
+												type="text"
+												class="w-full rounded-lg bg-gray-100 p-2 dark:bg-gray-800"
+												bind:this={message.editInputElement}
+												bind:value={message.content}
+												onkeydown={(e) => {
+													if (e.key === 'Enter') {
+														e.preventDefault();
+														handleMessageEdit(message);
+													}
+												}}
+											/>
+										{:else}
+											<div
+												class="bg-primary inline-block rounded-2xl px-4 py-2 text-sm text-white shadow"
+											>
+												{message.content}
+											</div>
+										{/if}
 										<div class="mt-1 text-xs text-gray-400">{formatDate(message.createdAt)}</div>
 										{@render messageReaction()}
 									</div>
@@ -653,21 +684,32 @@
 									{/each}
 								</ContextMenu.SubContent>
 							</ContextMenu.Sub>
-							<ContextMenu.Separator />
-							<ContextMenu.Item class="flex justify-between">
-								<span>Modifier</span>
-								<div>
-									<Pen size="18" />
-								</div>
-							</ContextMenu.Item>
-							<ContextMenu.Item
-								class="flex justify-between text-red-500 hover:!bg-red-500 hover:!text-white"
-							>
-								<span>Supprimer</span>
-								<div>
-									<Trash2 size="18" />
-								</div>
-							</ContextMenu.Item>
+							{#if message.author.userId === authenticatedUser.id}
+								<ContextMenu.Separator />
+								<ContextMenu.Item
+									class="flex justify-between"
+									onclick={() => {
+										handleMessageEdit(message);
+									}}
+								>
+									<span>Modifier</span>
+									<div>
+										<Pen size="18" />
+									</div>
+								</ContextMenu.Item>
+								<ContextMenu.Item
+									class="flex justify-between text-red-500 hover:!bg-red-500 hover:!text-white"
+									onclick={() => {
+										deleteMessageDialog.open = true;
+										deleteMessageDialog.message = message;
+									}}
+								>
+									<span>Supprimer</span>
+									<div>
+										<Trash2 size="18" />
+									</div>
+								</ContextMenu.Item>
+							{/if}
 						</ContextMenu.Content>
 					</ContextMenu.Root>
 				</div>
@@ -876,7 +918,7 @@
 			<Button
 				variant="destructive"
 				onclick={() => {
-					handleMessageDelete(deleteMessageDialog.message);
+					handleMessageDelete(deleteMessageDialog.message!);
 				}}
 			>
 				Supprimer

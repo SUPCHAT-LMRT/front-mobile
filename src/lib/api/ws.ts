@@ -320,6 +320,62 @@ class Ws {
 		);
 	}
 
+	public editDirectMessage = (
+		otherUserId: string,
+		messageId: string,
+		newContent: string,
+	) => {
+		this.send(
+			JSON.stringify({
+				action: "direct-message-content-edit",
+				otherUserId,
+				messageId,
+				newContent,
+			}),
+		);
+	}
+
+	public deleteDirectMessage = (
+		otherUserId: string,
+		messageId: string,
+	) => {
+		this.send(
+			JSON.stringify({
+				action: "direct-message-delete",
+				otherUserId,
+				messageId,
+			}),
+		);
+	}
+
+	public editChannelMessage = (
+		channelId: string,
+		messageId: string,
+		newContent: string,
+	) => {
+		this.send(
+			JSON.stringify({
+				action: "channel-message-content-edit",
+				channelId,
+				messageId,
+				newContent,
+			}),
+		);
+	}
+
+	public deleteChannelMessage = (
+		channelId: string,
+		messageId: string,
+	) => {
+		this.send(
+			JSON.stringify({
+				action: "channel-message-delete",
+				channelId,
+				messageId,
+			}),
+		);
+	}
+
 	public subscribe = (
 		action: string,
 		callback: (msg: any) => void,

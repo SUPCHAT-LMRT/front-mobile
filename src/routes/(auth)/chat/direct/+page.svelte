@@ -7,9 +7,11 @@
 	import { getUserProfile, PublicStatus, type UserProfile } from '$lib/api/user';
 	import ws from '$lib/api/ws';
 	import '$lib/assets/styles/chats.scss';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as ContextMenu from '$lib/components/ui/context-menu';
+	import { error } from '$lib/toast/toast.js';
 	import { cn } from '$lib/utils';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters.js';
 	import { formatDate } from '$lib/utils/formatDate';
@@ -18,6 +20,11 @@
 	import { ChevronLeft, Languages, Pen, Send, Trash2 } from 'lucide-svelte';
 	import { onDestroy, tick } from 'svelte';
 	import type { AuthenticatedUserState } from '../../authenticatedUser.svelte.js';
+
+	type CustomDirectMessage = DirectMessage & {
+		editMode?: boolean;
+		editInputElement?: HTMLDivElement | null;
+	};
 
 	const { authenticatedUserState } = page.data as {
 		authenticatedUserState: AuthenticatedUserState;
@@ -31,15 +38,25 @@
 	let currentChatId: string = $derived(page.url.searchParams.get('chatId') || '');
 	let otherUserProfile: UserProfile | null = $state(null);
 	let currentMessage = $state('');
-	let currentRoom: { id: string | null; messages: DirectMessage[] } = $state({
+	let currentRoom: { id: string | null; messages: CustomDirectMessage[] } = $state({
 		id: null,
 		messages: []
+	});
+
+	let deleteMessageDialog: {
+		open: boolean;
+		message: CustomDirectMessage | null;
+	} = $state({
+		open: false,
+		message: null
 	});
 
 	let unsubscribeSendMessage: (() => void) | null = null;
 	let unsubscribeMessageReactionAdded: (() => void) | null = null;
 	let unsubscribeMessageReactionRemoved: (() => void) | null = null;
 	let unsubscribeUserStatusUpdated: (() => void) | null = null;
+	let unsubscribeGroupMessageContentEdited: (() => void) | null = null;
+	let unsubscribeGroupMessageDeleted: (() => void) | null = null;
 	let inputElement: HTMLDivElement | null = $state(null);
 	let elementsList: HTMLDivElement | null = $state(null);
 	let isAutoScrolling = $state(false);
@@ -64,6 +81,8 @@
 			unsubscribeMessageReactionAdded?.();
 			unsubscribeMessageReactionRemoved?.();
 			unsubscribeUserStatusUpdated?.();
+			unsubscribeGroupMessageContentEdited?.();
+			unsubscribeGroupMessageDeleted?.();
 			ws.leaveRoom(currentRoom.id!);
 			currentRoom.id = null;
 			currentRoom.messages = [];
@@ -185,6 +204,24 @@
 					otherUserProfile.status = msg.status;
 				}
 			});
+
+			unsubscribeGroupMessageContentEdited = ws.subscribe(
+				'direct-message-content-edited',
+				(msg) => {
+					const message = currentRoom.messages.find((m) => m.id === msg.messageId);
+					if (message) {
+						message.content = msg.newContent;
+					}
+				}
+			);
+
+			unsubscribeGroupMessageDeleted = ws.subscribe('direct-message-deleted', (msg) => {
+				currentRoom.messages = currentRoom.messages.filter((m) => m.id !== msg.messageId);
+				if (deleteMessageDialog.open && deleteMessageDialog.message?.id === msg.messageId) {
+					deleteMessageDialog.open = false;
+					deleteMessageDialog.message = null;
+				}
+			});
 		} catch (e) {
 			console.error(e);
 		}
@@ -294,6 +331,33 @@
 		if (topObserver) topObserver.disconnect();
 		if (bottomObserver) bottomObserver.disconnect();
 	});
+
+	const handleMessageEdit = async (message: CustomDirectMessage) => {
+		// Toggle edit mode
+		message.editMode = !message.editMode;
+		if (message.editMode) {
+			await tick(); // Wait for the DOM to update
+			// Focus the input element if entering edit mode
+			message.editInputElement?.focus();
+		} else {
+			// Send the edited message
+			ws.editDirectMessage(currentChatId, message.id, message.content);
+		}
+	};
+
+	const handleMessageDelete = async (message: CustomDirectMessage) => {
+		if (!message) return;
+
+		try {
+			await ws.deleteDirectMessage(currentChatId, message.id);
+		} catch (e) {
+			console.error('Failed to delete message:', e);
+			error(
+				'Erreur lors de la suppression du message.',
+				'Impossible de supprimer le message, veuillez réessayer plus tard.'
+			);
+		}
+	};
 </script>
 
 <div class="relative flex h-screen w-full flex-1 flex-col gap-y-4 overflow-auto">
@@ -397,11 +461,26 @@
 									</div>
 								{:else}
 									<div class="max-w-[70%] text-right">
-										<div
-											class="bg-primary inline-block rounded-2xl px-4 py-2 text-sm text-white shadow"
-										>
-											{message.content}
-										</div>
+										{#if message.editMode}
+											<input
+												type="text"
+												class="w-full rounded-lg bg-gray-100 p-2 dark:bg-gray-800"
+												bind:this={message.editInputElement}
+												bind:value={message.content}
+												onkeydown={(e) => {
+													if (e.key === 'Enter') {
+														e.preventDefault();
+														handleMessageEdit(message);
+													}
+												}}
+											/>
+										{:else}
+											<div
+												class="bg-primary inline-block rounded-2xl px-4 py-2 text-sm text-white shadow"
+											>
+												{message.content}
+											</div>
+										{/if}
 										<div class="mt-1 text-xs text-gray-400">{formatDate(message.createdAt)}</div>
 										{@render messageReaction()}
 									</div>
@@ -436,21 +515,32 @@
 									{/each}
 								</ContextMenu.SubContent>
 							</ContextMenu.Sub>
-							<ContextMenu.Separator />
-							<ContextMenu.Item class="flex justify-between">
-								<span>Modifier</span>
-								<div>
-									<Pen size="18" />
-								</div>
-							</ContextMenu.Item>
-							<ContextMenu.Item
-								class="flex justify-between text-red-500 hover:!bg-red-500 hover:!text-white"
-							>
-								<span>Supprimer</span>
-								<div>
-									<Trash2 size="18" />
-								</div>
-							</ContextMenu.Item>
+							{#if message.author.userId === authenticatedUser.id}
+								<ContextMenu.Separator />
+								<ContextMenu.Item
+									class="flex justify-between"
+									onclick={() => {
+										handleMessageEdit(message);
+									}}
+								>
+									<span>Modifier</span>
+									<div>
+										<Pen size="18" />
+									</div>
+								</ContextMenu.Item>
+								<ContextMenu.Item
+									class="flex justify-between text-red-500 hover:!bg-red-500 hover:!text-white"
+									onclick={() => {
+										deleteMessageDialog.open = true;
+										deleteMessageDialog.message = message;
+									}}
+								>
+									<span>Supprimer</span>
+									<div>
+										<Trash2 size="18" />
+									</div>
+								</ContextMenu.Item>
+							{/if}
 						</ContextMenu.Content>
 					</ContextMenu.Root>
 				</div>
@@ -491,6 +581,30 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Delete Message Dialog -->
+<AlertDialog.Root bind:open={deleteMessageDialog.open}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Supprimer le message</AlertDialog.Title>
+			<AlertDialog.Description>
+				Êtes-vous sûr de vouloir supprimer ce message ?
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+
+		<AlertDialog.Footer>
+			<Button variant="outline" onclick={() => (deleteMessageDialog.open = false)}>Annuler</Button>
+			<Button
+				variant="destructive"
+				onclick={() => {
+					handleMessageDelete(deleteMessageDialog.message!);
+				}}
+			>
+				Supprimer
+			</Button>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
 
 <style>
 	.sentinel {
