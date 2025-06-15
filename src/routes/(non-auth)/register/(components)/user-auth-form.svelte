@@ -7,7 +7,7 @@
 	import { getInviteLinkData, registerUser } from '$lib/api/user';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
-	import { notifyByLevel, success } from '$lib/toast/toast';
+	import { error, notifyByLevel, success } from '$lib/toast/toast';
 	import { goto } from '$lib/utils/goto';
 	import { Loader } from 'lucide-svelte';
 	import { onMount } from 'svelte';
@@ -20,6 +20,9 @@
 	let lastName = $state('');
 
 	const token = $derived(page.url.searchParams.get('token') || '');
+
+	const passwordRegex =
+		/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{}|\\:;"'<>,.\/])[A-Za-z\d@$!%*?&#^()_+\-=\[\]{}|\\:;"'<>,.\/]{8,}$/;
 
 	onMount(async () => {
 		try {
@@ -34,6 +37,16 @@
 
 	async function onSubmit() {
 		isSubmitting = true;
+
+		if (!passwordRegex.test(password)) {
+			error(
+				'Mot de passe invalide',
+				'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.'
+			);
+			isSubmitting = false;
+			return;
+		}
+
 		try {
 			const response = await registerUser(
 				token,

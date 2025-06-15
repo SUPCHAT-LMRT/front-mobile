@@ -197,3 +197,32 @@ export const updateWorkspaceBanner = async (
 		throw e;
 	}
 };
+
+export interface WorkspaceInviteLink {
+	workspaceId: string;
+	workspaceName: string;
+}
+
+
+export const getWorkspaceInviteLink = async (
+	token: string,
+): Promise<WorkspaceInviteLink> => {
+	try {
+		const { data } = await baseClient.get(
+			`/api/workspace-invite-link/${token}`,
+		);
+		return data;
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+};
+
+export const acceptWorkspaceInvitation = async (token: string): Promise<void> => {
+	try {
+		await baseClient.post(`/api/workspace-invite-link/${token}/join`);
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+};
