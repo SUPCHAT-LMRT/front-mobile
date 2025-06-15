@@ -35,6 +35,7 @@
 		isPrivate: false,
 		members: [] as string[]
 	});
+	let bannerImageExists = $state(true);
 
 	$effect(() => {
 		const fetchWorkspaceChannels = async () => {
@@ -52,6 +53,21 @@
 				publicChannels = [];
 			}
 		};
+
+		const checkBannerExists = async () => {
+			try {
+				const response = await fetch(getS3ObjectUrl(S3Bucket.WORKSPACES_BANNERS, workspace!.id));
+				bannerImageExists = response.ok;
+			} catch {
+				bannerImageExists = false;
+			}
+		};
+
+		$effect(() => {
+			if (workspace?.id) {
+				checkBannerExists();
+			}
+		});
 
 		$effect(() => {
 			return ws.subscribe("workspace-updated", (msg) => {
@@ -131,7 +147,7 @@
 		// Subscribe to channel updates
 		const unsubscribeChannelCreated = ws.subscribe('channel-created', (msg) => {
 			const channelCreated = msg.channel as Channel;
-			if (channelCreated.workspaceId !== workspace.id) return; // This is not supposed to happen but just in case (because it's handled by the server)
+			if (channelCreated.workspaceId !== workspace!.id) return; // This is not supposed to happen but just in case (because it's handled by the server)
 			if (channelCreated.isPrivate) {
 				privateChannels.push(channelCreated);
 			} else {
@@ -148,6 +164,7 @@
 {#if workspace}
 	<div class="bg-background w-full h-full overflow-y-auto">
 		<div class="bg-muted relative h-40 w-full">
+			{#if bannerImageExists}
 			<img
 				src="{getS3ObjectUrl(
               S3Bucket.WORKSPACES_BANNERS,
@@ -156,8 +173,14 @@
 				alt=""
 				class="w-full h-full mb-6 object-cover"
 			/>
+			{:else}
+				<div class="h-40 w-full relative bg-gradient-to-r from-primary from-50% to-[#94bfc9]">
+					<div class="absolute inset-0 flex items-center justify-center">
+					</div>
+				</div>
+			{/if}
 
-			<div class="absolute -bottom-12 flex w-full items-center justify-between px-6">
+				<div class="absolute -bottom-12 flex w-full items-center justify-between px-6">
 				<div class="flex items-center gap-4">
 					{#key workspace}
 						<Avatar.Root class="border-background size-24 border-4 bg-gray-200 shadow-sm">
@@ -229,7 +252,7 @@
 								href="/workspaces/channels?workspaceId={workspace.id}&channelId={channel.id}"
 								class="hover:bg-accent flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left transition-colors"
 							>
-								<Hash size={18} class="text-primary translate-y-0.5" />
+								<Hash size={18} class="text-yellow-app translate-y-0.5" />
 								<span>{channel.name}</span>
 							</a>
 						{:else}
@@ -282,7 +305,7 @@
 				<Drawer.Root shouldScaleBackground={true}>
 					<Drawer.Trigger>
 						<Button
-							class="bg-primary/90 hover:bg-primary mb-20 flex w-full items-center justify-center gap-4 rounded-lg py-4 text-base font-medium text-white shadow-sm transition-all duration-300 hover:shadow-md"
+							class="mt-5 bg-primary/90 hover:bg-primary mb-20 flex w-full items-center justify-center gap-4 rounded-lg py-4 text-base font-medium text-white shadow-sm transition-all duration-300 hover:shadow-md"
 						>
 							Sondages
 						</Button>
