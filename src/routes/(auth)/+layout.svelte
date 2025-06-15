@@ -34,6 +34,7 @@
 			error("Erreur", "Une erreur est survenue lors de l'exportation de vos données.");
 		}
 	};
+
 </script>
 
 <ModeWatcher />
@@ -86,7 +87,9 @@
 										<Drawer.Content
 											class="fixed right-0 bottom-0 left-0 mt-24 flex h-full max-h-[96%] flex-col rounded-t-[10px]"
 										>
-											<ContentUser authenticatedUser={authenticatedUserState.user} />
+											<ContentUser
+												authenticatedUser={authenticatedUserState.user}
+											/>
 										</Drawer.Content>
 									</Drawer.Portal>
 								</Drawer.NestedRoot>

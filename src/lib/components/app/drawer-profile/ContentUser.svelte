@@ -106,4 +106,14 @@
 			</AlertDialog.Content>
 		</AlertDialog.Root>
 	</div>
+
+	<div class="fixed bottom-2 right-2 z-50">
+		<a
+			href="/cgu"
+			data-sveltekit-reload
+			class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
+		>
+			CGU
+		</a>
+	</div>
 </div>
