@@ -1,21 +1,28 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { smartFly } from '$lib/animation/visibleFly.js';
-	import { type DirectMessage, getDirectMessages } from '$lib/api/direct/message.js';
+	import {
+		type DirectMessage,
+		getDirectMessages,
+		uploadDirectMessageFile
+	} from '$lib/api/direct/message.js';
 	import { RoomKind } from '$lib/api/room';
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
 	import { getUserProfile, PublicStatus, type UserProfile } from '$lib/api/user';
 	import ws from '$lib/api/ws';
 	import '$lib/assets/styles/chats.scss';
+	import FileDropZone from '$lib/components/app/FileDropZone.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as ContextMenu from '$lib/components/ui/context-menu';
-	import { error } from '$lib/toast/toast.js';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { error, success } from '$lib/toast/toast.js';
 	import { cn } from '$lib/utils';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters.js';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { scrollToBottom } from '$lib/utils/scrollToBottom';
+	import { FileIcon } from '@lucide/svelte';
 	import NumberFlow from '@number-flow/svelte';
 	import { ChevronLeft, Languages, Pen, Send, Trash2 } from 'lucide-svelte';
 	import { onDestroy, tick } from 'svelte';
@@ -51,12 +58,16 @@
 		message: null
 	});
 
+	let selectedFiles: File[] = $state([]);
+	let sendFileDialogOpen = $state(false);
+
 	let unsubscribeSendMessage: (() => void) | null = null;
 	let unsubscribeMessageReactionAdded: (() => void) | null = null;
 	let unsubscribeMessageReactionRemoved: (() => void) | null = null;
 	let unsubscribeUserStatusUpdated: (() => void) | null = null;
 	let unsubscribeGroupMessageContentEdited: (() => void) | null = null;
 	let unsubscribeGroupMessageDeleted: (() => void) | null = null;
+	let unsubscribeDirectMessageAttachmentCreated: (() => void) | null = null;
 	let inputElement: HTMLDivElement | null = $state(null);
 	let elementsList: HTMLDivElement | null = $state(null);
 	let isAutoScrolling = $state(false);
@@ -83,6 +94,7 @@
 			unsubscribeUserStatusUpdated?.();
 			unsubscribeGroupMessageContentEdited?.();
 			unsubscribeGroupMessageDeleted?.();
+			unsubscribeDirectMessageAttachmentCreated?.();
 			ws.leaveRoom(currentRoom.id!);
 			currentRoom.id = null;
 			currentRoom.messages = [];
@@ -154,7 +166,8 @@
 						lastName: msg.sender.lastName
 					},
 					createdAt: new Date(msg.createdAt),
-					reactions: []
+					reactions: [],
+					attachments: []
 				});
 
 				await tick();
@@ -222,6 +235,32 @@
 					deleteMessageDialog.message = null;
 				}
 			});
+
+			unsubscribeDirectMessageAttachmentCreated = ws.subscribe(
+				'direct-attachment-created',
+				async ({ message }) => {
+					currentRoom.messages.push({
+						id: message.id,
+						content: '',
+						author: {
+							userId: message.authorUserId,
+							firstName: message.authorFirstName,
+							lastName: message.authorLastName
+						},
+						createdAt: new Date(message.createdAt),
+						reactions: [],
+						attachments: [
+							{
+								id: message.attachmentFileId,
+								name: message.attachmentFileName
+							}
+						]
+					});
+
+					await tick();
+					await scrollToBottomSafe(elementsList);
+				}
+			);
 		} catch (e) {
 			console.error(e);
 		}
@@ -358,6 +397,32 @@
 			);
 		}
 	};
+
+	function handleFilesSelected(event: File[]) {
+		selectedFiles = event;
+	}
+
+	function handleError(event: string) {
+		error('Erreur', event);
+	}
+
+	async function uploadFiles() {
+		if (selectedFiles.length === 0) return;
+
+		try {
+			// Replace with your upload endpoint
+			await uploadDirectMessageFile(
+				otherUserProfile?.id!,
+				selectedFiles[0] // Assuming single file upload for simplicity
+			);
+
+			sendFileDialogOpen = false;
+			success('Fichiers envoyés', 'Fichiers envoyés avec succès!');
+			selectedFiles = [];
+		} catch (e) {
+			error('Erreur', "Echec de l'envoi des fichiers.");
+		}
+	}
 </script>
 
 <div class="relative flex h-screen w-full flex-1 flex-col gap-y-4 overflow-auto">
@@ -453,9 +518,27 @@
 											{message.author.firstName}
 											{message.author.lastName}
 										</div>
-										<div class="bg-muted mt-1 rounded-xl px-3 py-2 text-sm shadow">
-											{message.content}
-										</div>
+										{#each message.attachments as attachment}
+											<div class="mt-2 flex flex-col items-start">
+												<Button
+													variant="ghost"
+													href={getS3ObjectUrl(S3Bucket.DIRECT_MESSAGES_ATTACHMENTS, attachment.id)}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="h-[50px] w-[50px]"
+												>
+													<FileIcon />
+												</Button>
+												<span class="text-sm text-gray-500">
+													{attachment.name}
+												</span>
+											</div>
+										{/each}
+										{#if message.content.trim() !== ''}
+											<div class="bg-muted mt-1 rounded-xl px-3 py-2 text-sm shadow">
+												{message.content}
+											</div>
+										{/if}
 										<div class="mt-1 text-xs text-gray-400">{formatDate(message.createdAt)}</div>
 										{@render messageReaction()}
 									</div>
@@ -475,11 +558,32 @@
 												}}
 											/>
 										{:else}
-											<div
-												class="bg-primary inline-block rounded-2xl px-4 py-2 text-sm text-white shadow"
-											>
-												{message.content}
-											</div>
+											{#each message.attachments as attachment}
+												<div class="mt-2 flex flex-col items-end">
+													<Button
+														variant="ghost"
+														href={getS3ObjectUrl(
+															S3Bucket.DIRECT_MESSAGES_ATTACHMENTS,
+															attachment.id
+														)}
+														target="_blank"
+														rel="noopener noreferrer"
+														class="h-[50px] w-[50px]"
+													>
+														<FileIcon />
+													</Button>
+													<span class="text-sm text-gray-500">
+														{attachment.name}
+													</span>
+												</div>
+											{/each}
+											{#if message.content.trim() !== ''}
+												<div
+													class="bg-primary inline-block rounded-2xl px-4 py-2 text-sm text-white shadow"
+												>
+													{message.content}
+												</div>
+											{/if}
 										{/if}
 										<div class="mt-1 text-xs text-gray-400">{formatDate(message.createdAt)}</div>
 										{@render messageReaction()}
@@ -572,6 +676,48 @@
 			>
 				<Languages size={20} class="text-primary" />
 			</Button>
+
+			<!-- Send file button -->
+			<Dialog.Root bind:open={sendFileDialogOpen}>
+				<Dialog.Trigger
+					class="rounded-lg p-2 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
+					aria-label="Envoyer un fichier"
+				>
+					<FileIcon size={20} class="text-primary" />
+				</Dialog.Trigger>
+				<Dialog.Content>
+					<Dialog.Header>
+						<Dialog.Title>Envoyer un fichier</Dialog.Title>
+						<Dialog.Description>
+							Sélectionnez un fichier à {otherUserProfile.firstName}
+							{otherUserProfile.lastName}.
+						</Dialog.Description>
+					</Dialog.Header>
+
+					<div class="container mx-auto max-w-2xl p-6">
+						<FileDropZone
+							accept="image/*,.pdf,.doc,.docx"
+							multiple={false}
+							maxSize={5 * 1024 * 1024}
+							filesSelected={handleFilesSelected}
+							error={handleError}
+							class="mb-6"
+						/>
+
+						{#if selectedFiles.length > 0}
+							<div class="flex gap-2">
+								<button
+									class="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2"
+									onclick={uploadFiles}
+								>
+									Envoyer {selectedFiles.length} fichier(s)
+								</button>
+							</div>
+						{/if}
+					</div>
+				</Dialog.Content>
+			</Dialog.Root>
+
 			<button
 				class="rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-700"
 				onclick={sendMessageToWs}

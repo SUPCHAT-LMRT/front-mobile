@@ -37,6 +37,33 @@
 		alertOpen = true;
 	}
 
+	const copyFullLink = () => {
+		inviteLink.subscribe((link) => {
+			if (link) {
+				navigator.clipboard.writeText(link)
+					.then(() => success("Lien copié", "Le lien d'invitation a été copié."))
+					.catch((err) => console.error("Erreur copie lien :", err));
+			}
+		})();
+	};
+
+	const copyToken = () => {
+		inviteLink.subscribe((link) => {
+			if (link) {
+				let token = "";
+				if (link.includes("token=")) {
+					token = link.split("token=")[1];
+				} else {
+					const parts = link.split("/");
+					token = parts[parts.length - 1];
+				}
+				navigator.clipboard.writeText(token)
+					.then(() => success("Token copié", "Le token a été copié."))
+					.catch((err) => console.error("Erreur copie token :", err));
+			}
+		})();
+	};
+
 	onMount(async () => {
 		try {
 			const data = await getInviteLink();
@@ -98,15 +125,7 @@
 			? link.slice(0, 20) + "..." + link.slice(-5)
 			: link;
 	}
-	const copyInviteLink = () => {
-		inviteLink.subscribe((link) => {
-			if (link) {
-				navigator.clipboard.writeText(link)
-					.then(() => success("Lien copié", "Le lien d'invitation a été copié."))
-					.catch(err => console.error("Erreur copie :", err));
-			}
-		})();
-	};
+
 </script>
 
 <div class="space-y-6 px-2">
@@ -146,11 +165,16 @@
 						</div>
 
 						{#if $inviteLink}
-							<div class="mt-2 flex flex-col gap-3">
+							<div class="mt-2 flex flex-col gap-2">
 								<div class="flex items-center justify-between gap-2 p-3 border rounded-md bg-gray-100 dark:bg-gray-700">
 									<span class="text-sm truncate dark:text-gray-300">{shortenLink($inviteLink)}</span>
-									<Button onclick={copyInviteLink} class="p-2 bg-[#61A0AF] text-white rounded-md hover:bg-[#4B7986]" aria-label="Copier le lien">
-										<ClipboardCopy size={16}/>
+								</div>
+								<div class="flex gap-2">
+									<Button onclick={copyFullLink} class="p-2 bg-[#61A0AF] text-white rounded-md hover:bg-[#4B7986]" aria-label="Copier le lien complet">
+										Copier le lien
+									</Button>
+									<Button onclick={copyToken} class="p-2 bg-[#61A0AF] text-white rounded-md hover:bg-[#4B7986]" aria-label="Copier le token">
+										Copier le token
 									</Button>
 								</div>
 							</div>

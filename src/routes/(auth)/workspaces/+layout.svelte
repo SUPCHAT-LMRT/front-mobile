@@ -101,6 +101,16 @@
 		}
 	});
 
+	// $effect to send the selectWorkspace message to the server when the workspace changes
+	$effect(() => {
+		if (!workspace) return;
+		ws.selectWorkspace(workspace.id);
+
+		return () => {
+			ws.unselectWorkspace();
+		};
+	});
+
 	async function createNewWorkspace() {
 		try {
 			const workspace = await createWorkspace(workspaceName, type);
@@ -141,7 +151,7 @@
 									class="h-full w-full object-cover"
 								/>
 								<Avatar.Fallback
-									class="rounded-3xl transition-all hover:rounded-2xl hover:scale-105 bg-gray-200 dark:bg-gray-700 dark:text-gray-200 text-gray-700 text-sm flex items-center justify-center"
+									class="flex items-center justify-center rounded-3xl bg-gray-200 text-sm text-gray-700 transition-all hover:scale-105 hover:rounded-2xl dark:bg-gray-700 dark:text-gray-200"
 								>
 									{fallbackAvatarLetters(workspace.name)}
 								</Avatar.Fallback>
@@ -191,7 +201,7 @@
 										{/key}
 
 										<Avatar.Fallback
-											class="rounded-3xl transition-all hover:rounded-2xl hover:scale-105 bg-gray-200 dark:bg-gray-700 dark:text-gray-200 text-gray-700 text-sm flex items-center justify-center"
+											class="flex items-center justify-center rounded-3xl bg-gray-200 text-sm text-gray-700 transition-all hover:scale-105 hover:rounded-2xl dark:bg-gray-700 dark:text-gray-200"
 										>
 											{fallbackAvatarLetters(iteratedWorkspace.name)}
 										</Avatar.Fallback>

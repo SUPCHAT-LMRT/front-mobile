@@ -97,18 +97,23 @@ export type ChannelMessage = {
 	author: ChannelMessageAuthor;
 	createdAt: Date;
 	reactions: ChannelMessageReaction[];
+	attachments: ChannelMessageAttachment[];
 };
 
 type ChannelMessageAuthor = {
 	userId: string;
 	pseudo: string;
 	workspaceMemberId: string;
-	workspacePseudo: string;
 };
 
 type ChannelMessageReaction = {
 	users: { id: string; name: string }[];
 	reaction: string;
+};
+
+type ChannelMessageAttachment = {
+	id: string;
+	name: string;
 };
 
 export const getWorkspaceChannelMessages = async (
@@ -181,3 +186,27 @@ export const getPrivateChannelMembers = async (
 		throw e;
 	}
 };
+
+export const uploadChannelFile = async (
+	workspaceId: string,
+	channelId: string,
+	file: File,
+): Promise<{ id: string; name: string; url: string }> => {
+	try {
+		const formData = new FormData();
+		formData.append("file", file);
+		const { data } = await baseClient.post(
+			`/api/workspaces/${workspaceId}/channels/${channelId}/files`,
+			formData,
+			{
+				headers: {
+					"Content-Type": "multipart/form-data",
+				},
+			},
+		);
+		return data;
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+}

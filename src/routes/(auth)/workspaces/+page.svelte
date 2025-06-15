@@ -1,9 +1,18 @@
 <script lang="ts">
 	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
+	import {
+		createWorkspaceChannel,
+		listWorkspaceChannels,
+		listWorkspacePrivateChannels
+	} from '$lib/api/workspace/channels';
 	import { type Channel, type Workspace } from '$lib/api/workspace/workspace';
 	import ws from '$lib/api/ws';
+	import CreateChannelDialog from '$lib/components/app/workspace/CreateChannelDialog.svelte';
+	import InviteMemberDialog from '$lib/components/app/workspace/InviteMemberDialog.svelte';
+	import Poll from '$lib/components/app/workspace/Poll.svelte';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Button } from '$lib/components/ui/button';
+	import * as Drawer from '$lib/components/ui/drawer/index.js';
 	import { Separator } from '$lib/components/ui/separator';
 	import { error } from '$lib/toast/toast';
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters';
@@ -11,17 +20,6 @@
 	import { AxiosError } from 'axios';
 	import { Settings, UserPlus } from 'lucide-svelte';
 	import { currentWorkspaceState } from './currentWorkspace.svelte';
-	import InviteMemberDialog from '$lib/components/app/workspace/InviteMemberDialog.svelte';
-	import {
-		createWorkspaceChannel,
-		listWorkspaceChannels,
-		listWorkspacePrivateChannels
-	} from '$lib/api/workspace/channels';
-	import CreateChannelDialog from '$lib/components/app/workspace/CreateChannelDialog.svelte';
-	import * as Drawer from '$lib/components/ui/drawer/index.js';
-	import General from '$lib/components/app/workspace/workspaceSettings/general/General.svelte';
-	import Poll from '$lib/components/app/workspace/Poll.svelte';
-
 
 	let workspace: Workspace | null = $derived(currentWorkspaceState.workspace);
 	let publicChannels: Channel[] = $state([]);
@@ -70,7 +68,7 @@
 		});
 
 		$effect(() => {
-			return ws.subscribe("workspace-updated", (msg) => {
+			return ws.subscribe('workspace-updated', (msg) => {
 				if (msg.workspaceId === workspace?.id) {
 					workspace = {
 						...workspace!,
@@ -132,16 +130,6 @@
 		}
 	};
 
-	// $effect to send the selectWorkspace message to the server when the workspace changes
-	$effect(() => {
-		if (!workspace) return;
-		ws.selectWorkspace(workspace.id);
-
-		return () => {
-			ws.unselectWorkspace();
-		};
-	});
-
 	$effect(() => {
 		if (!workspace) return;
 		// Subscribe to channel updates
@@ -162,33 +150,26 @@
 </script>
 
 {#if workspace}
-	<div class="bg-background w-full h-full overflow-y-auto">
+	<div class="bg-background h-full w-full overflow-y-auto">
 		<div class="bg-muted relative h-40 w-full">
 			{#if bannerImageExists}
-			<img
-				src="{getS3ObjectUrl(
-              S3Bucket.WORKSPACES_BANNERS,
-              workspace.id,
-            )}?{forceRenderBanner}"
-				alt=""
-				class="w-full h-full mb-6 object-cover"
-			/>
+				<img
+					src="{getS3ObjectUrl(S3Bucket.WORKSPACES_BANNERS, workspace.id)}?{forceRenderBanner}"
+					alt=""
+					class="mb-6 h-full w-full object-cover"
+				/>
 			{:else}
-				<div class="h-40 w-full relative bg-gradient-to-r from-primary from-50% to-[#94bfc9]">
-					<div class="absolute inset-0 flex items-center justify-center">
-					</div>
+				<div class="from-primary relative h-40 w-full bg-gradient-to-r from-50% to-[#94bfc9]">
+					<div class="absolute inset-0 flex items-center justify-center"></div>
 				</div>
 			{/if}
 
-				<div class="absolute -bottom-12 flex w-full items-center justify-between px-6">
+			<div class="absolute -bottom-12 flex w-full items-center justify-between px-6">
 				<div class="flex items-center gap-4">
 					{#key workspace}
 						<Avatar.Root class="border-background size-24 border-4 bg-gray-200 shadow-sm">
 							<Avatar.Image
-								src="{getS3ObjectUrl(
-                    S3Bucket.WORKSPACES_ICONS,
-                    workspace.id,
-                  )}?{forceRenderIcon}"
+								src="{getS3ObjectUrl(S3Bucket.WORKSPACES_ICONS, workspace.id)}?{forceRenderIcon}"
 								alt={`Workspace ${workspace.id}`}
 								class="rounded-full"
 							/>
@@ -305,7 +286,7 @@
 				<Drawer.Root shouldScaleBackground={true}>
 					<Drawer.Trigger>
 						<Button
-							class="mt-5 bg-primary/90 hover:bg-primary mb-20 flex w-full items-center justify-center gap-4 rounded-lg py-4 text-base font-medium text-white shadow-sm transition-all duration-300 hover:shadow-md"
+							class="bg-primary/90 hover:bg-primary mt-5 mb-20 flex w-full items-center justify-center gap-4 rounded-lg py-4 text-base font-medium text-white shadow-sm transition-all duration-300 hover:shadow-md"
 						>
 							Sondages
 						</Button>
@@ -329,7 +310,7 @@
 										</Drawer.Description>
 									</div>
 								</Drawer.Header>
-								<div class="px-5 overflow-y-auto mb-2">
+								<div class="mb-2 overflow-y-auto px-5">
 									<Poll />
 								</div>
 							</Drawer.Content>
