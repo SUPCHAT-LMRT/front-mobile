@@ -26,8 +26,7 @@
 	};
 </script>
 
-<div class="flex flex-col gap-1 justify-start items-start">
-	<div class="px-3 w-full">
+<div class="flex flex-col gap-1 justify-start items-start w-full">
 		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
 			<Drawer.Trigger>
 				<Button variant="option" size="sm" class="text-gray-800 justify-start">
@@ -45,9 +44,6 @@
 			</Drawer.Portal>
 		</Drawer.NestedRoot>
 
-	</div>
-
-	<div class="px-4 flex flex-col gap-2 justify-start items-start w-full">
 		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
 			<Drawer.Trigger>
 				<Button variant="option" size="sm" class="text-gray-800 justify-start">
@@ -68,7 +64,7 @@
 		<Button
 			variant="option"
 			size="sm"
-			class="text-gray-800"
+			class="text-gray-800 justify-start ml-1.5"
 			onclick={() => selectStatus(authenticatedUserState.user.status === PrivateStatus.AWAY ? PrivateStatus.ONLINE : PrivateStatus.AWAY)}
 		>
 			{#if authenticatedUserState.user.status === PrivateStatus.AWAY}
@@ -96,7 +92,6 @@
 				</Drawer.Content>
 			</Drawer.Portal>
 		</Drawer.NestedRoot>
-	</div>
 
 	<Separator class="my-4" />
 	<p class="text-gray-500 px-2">Admin</p>
