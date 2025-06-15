@@ -21,6 +21,9 @@
 
 	const token = $derived(page.url.searchParams.get('token') || '');
 
+	const passwordRegex =
+		/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{}|\\:;"'<>,.\/])[A-Za-z\d@$!%*?&#^()_+\-=\[\]{}|\\:;"'<>,.\/]{8,}$/;
+
 	onMount(async () => {
 		try {
 			const inviteData = await getInviteLinkData(token);
@@ -34,6 +37,18 @@
 
 	async function onSubmit() {
 		isSubmitting = true;
+
+		if (!passwordRegex.test(password)) {
+			notifyByLevel({
+				title: "Mot de passe invalide",
+				level: "error",
+				message:
+					"Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.",
+			});
+			isSubmitting = false;
+			return;
+		}
+
 		try {
 			const response = await registerUser(
 				token,
