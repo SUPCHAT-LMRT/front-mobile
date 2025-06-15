@@ -25,6 +25,7 @@
 	import { AxiosError } from 'axios';
 	import type { AuthenticatedUserState } from '../authenticatedUser.svelte';
 	import { currentWorkspaceState } from './currentWorkspace.svelte';
+	import { goto } from '$app/navigation';
 
 	const { children } = $props();
 	const { authenticatedUserState } = page.data as {
@@ -127,6 +128,15 @@
 			console.error('Erreur lors de la création du workspace :', error);
 		}
 	}
+
+	let joinDialogOpen = $state(false);
+	let joinToken = $state('');
+
+	async function joinWorkspace() {
+		goto(`/workspace-invite-link?token=${joinToken}`);
+		joinDialogOpen = false;
+		joinToken = '';
+	}
 </script>
 
 <div class="flex h-screen flex-col gap-y-4">
@@ -222,42 +232,40 @@
 						{/each}
 					</div>
 
-					<Drawer.Footer class="flex w-full flex-row gap-x-2">
-						<Dialog.Root bind:open={dialogOpen}>
-							<Dialog.Trigger class={cn(buttonVariants(), 'w-full max-w-full shrink')}>
-								Créer
-							</Dialog.Trigger>
-							<Dialog.Content>
-								<Dialog.Header
-									class="relative flex h-full flex-col items-center justify-center text-center"
-								>
-									<div class="text-center">
-										<Dialog.Title class="text-2xl font-bold"
-											>Crée ton espace de travail</Dialog.Title
-										>
-										<p class="mt-2 text-sm text-gray-700">
-											Ton espace de travail est l&apos;endroit où tu retrouves tes amis. Crée le
-											tien et lance une discussion.
-										</p>
-									</div>
-								</Dialog.Header>
-
-								<div class="mt-4 space-y-4">
-									{#if !showInput}
-										<Button
-											variant="outline"
-											class="h-16 w-full justify-between border hover:bg-gray-200"
-											onclick={() => (showInput = true)}
-										>
-											<div class="flex items-center gap-3">
-												<div class="rounded-full p-2">
-													<Globe class="h-6 w-6" />
+					<Drawer.Footer class="flex w-full flex-col gap-y-2">
+						<div class="w-full">
+							<Dialog.Root bind:open={dialogOpen}>
+								<Dialog.Trigger class={cn(buttonVariants(), 'w-full max-w-full shrink')}>
+									Créer
+								</Dialog.Trigger>
+								<Dialog.Content>
+									<!-- Contenu du dialog de création -->
+									<Dialog.Header class="relative flex h-full flex-col items-center justify-center text-center">
+										<div class="text-center">
+											<Dialog.Title class="text-2xl font-bold">
+												Crée ton espace de travail
+											</Dialog.Title>
+											<p class="mt-2 text-sm text-gray-700">
+												Ton espace de travail est l&apos;endroit où tu retrouves tes amis. Crée le tien et lance une discussion.
+											</p>
+										</div>
+									</Dialog.Header>
+									<div class="mt-4 space-y-4">
+										{#if !showInput}
+											<Button
+												variant="outline"
+												class="h-16 w-full justify-between border hover:bg-gray-200"
+												onclick={() => (showInput = true)}
+											>
+												<div class="flex items-center gap-3">
+													<div class="rounded-full p-2">
+														<Globe class="h-6 w-6" />
+													</div>
+													<span class="font-medium">Créer le mien</span>
 												</div>
-												<span class="font-medium">Créer le mien</span>
-											</div>
-											<div class="text-gray-400">→</div>
-										</Button>
-									{:else}
+												<div class="text-gray-400">→</div>
+											</Button>
+										{/if}
 										<div class="w-full">
 											<Input
 												class="mb-4 w-full rounded-md border p-2"
@@ -267,8 +275,8 @@
 											<div class="grid w-full max-w-sm items-center gap-1.5">
 												<Input
 													onchange={({ currentTarget }) => {
-														workspaceIconImage = currentTarget.files?.[0];
-													}}
+                  workspaceIconImage = currentTarget.files?.[0];
+                }}
 													id="picture"
 													type="file"
 													accept="image/png, image/jpeg, image/webp"
@@ -285,40 +293,64 @@
 												</div>
 											</RadioGroup.Root>
 										</div>
-									{/if}
-
-									<div class="flex justify-between gap-x-4 pt-4">
 										{#if showInput}
-											<Button
-												variant="ghost"
-												class="h-10 w-max justify-start"
-												onclick={() => (showInput = false)}
-											>
-												<div class="text-gray-400">&larr;</div>
-												Retour
-											</Button>
-
-											<div class="float-end">
+											<div class="flex justify-between gap-x-4 pt-4">
+												<Button
+													variant="ghost"
+													class="h-10 w-max justify-start"
+													onclick={() => (showInput = false)}
+												>
+													<div class="text-gray-400">&larr;</div>
+													Retour
+												</Button>
 												<Button
 													onclick={createNewWorkspace}
-													class="bg-primary h-10 w-full justify-center px-6 text-white"
+													class="bg-primary h-8 w-auto justify-center px-4 text-white"
 												>
 													Créer un espace de travail
 												</Button>
 											</div>
-										{:else}
-											<div class="w-full">
-												<p class="mb-2 text-sm text-gray-500">Tu as déjà une invitation ?</p>
-												<Button class="h-10 w-full justify-center">
-													Rejoindre un espace de travail
-												</Button>
-											</div>
 										{/if}
 									</div>
-								</div>
-							</Dialog.Content>
-						</Dialog.Root>
-						<Button variant="outline" class="w-full shrink" href="/discover">Décrouvrir</Button>
+								</Dialog.Content>
+							</Dialog.Root>
+						</div>
+
+						<div class="flex w-full flex-row gap-x-2">
+							<Dialog.Root bind:open={joinDialogOpen}>
+								<Dialog.Trigger class={cn(buttonVariants(), 'w-full shrink')}>
+									Rejoindre avec token
+								</Dialog.Trigger>
+								<Dialog.Content>
+									<Dialog.Header class="text-center">
+										<Dialog.Title class="text-xl font-bold">
+											Rejoindre un espace
+										</Dialog.Title>
+										<p class="mt-2 text-sm text-gray-700">
+											Entrez votre token pour rejoindre un espace de travail.
+										</p>
+									</Dialog.Header>
+									<div class="mt-4 space-y-4">
+										<Input
+											class="w-full rounded-md border p-2"
+											placeholder="Token"
+											bind:value={joinToken}
+										/>
+										<div class="flex justify-end gap-x-2">
+											<Button variant="ghost" onclick={() => (joinDialogOpen = false)}>
+												Annuler
+											</Button>
+											<Button onclick={joinWorkspace}>
+												Rejoindre
+											</Button>
+										</div>
+									</div>
+								</Dialog.Content>
+							</Dialog.Root>
+							<Button variant="outline" class="w-full shrink" href="/discover">
+								Découvrir
+							</Button>
+						</div>
 					</Drawer.Footer>
 				</Drawer.Content>
 			</Drawer.Root>
