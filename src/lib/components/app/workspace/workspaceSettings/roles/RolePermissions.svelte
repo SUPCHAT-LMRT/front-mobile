@@ -16,7 +16,6 @@
                 RolePermission.MANAGE_WORKSPACE_SETTINGS,
                 RolePermission.MANAGE_ROLES,
                 RolePermission.MANAGE_CHANNELS,
-                RolePermission.MANAGE_INVITES
             ]
         },
         {
@@ -26,7 +25,6 @@
                 RolePermission.SEND_MESSAGES,
                 RolePermission.ATTACH_FILES,
                 RolePermission.MANAGE_MESSAGES,
-                RolePermission.PIN_MESSAGES
             ]
         },
         {

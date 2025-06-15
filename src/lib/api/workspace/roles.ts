@@ -13,10 +13,8 @@ export class RolePermission {
 	public static MANAGE_CHANNELS = new RolePermission(1 << 0, "Gérer les canaux", "Permet de gérer les canaux du serveur.");
 	public static MANAGE_ROLES = new RolePermission(1 << 1, "Gérer les rôles", "Permet de gérer les rôles du serveur.");
 	public static MANAGE_MESSAGES = new RolePermission(1 << 2, "Gérer les messages", "Permet de gérer les messages du serveur.");
-	public static MANAGE_INVITES = new RolePermission(1 << 3, "Gérer les invitations", "Permet de gérer les invitations du serveur.");
 	public static SEND_MESSAGES = new RolePermission(1 << 4, "Envoyer un message", "Permet d'envoyer des messages dans le serveur.");
 	public static ATTACH_FILES = new RolePermission(1 << 5, "Joindre des fichiers", "Permet de joindre des fichiers dans le serveur.");
-	public static PIN_MESSAGES = new RolePermission(1 << 6, "Épingler des messages", "Permet d'épingler des messages dans le serveur.");
 	public static KICK_MEMBERS = new RolePermission(1 << 7, "Expulser des membres", "Permet d'expulser des membres du serveur.");
 	public static MENTION_EVERYONE = new RolePermission(1 << 8, "Mentionner @everyone", "Permet de mentionner @everyone dans le serveur.");
 	public static INVITE_MEMBERS = new RolePermission(1 << 9, "Inviter des membres", "Permet d'inviter des membres dans le serveur.");
