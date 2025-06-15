@@ -50,7 +50,6 @@
 	class="pb-safe fixed bottom-0 left-0 w-full border-t border-slate-200 bg-white px-8 py-2 dark:border-slate-700 dark:bg-slate-900"
 >
 	<div class="mx-auto flex items-center justify-between">
-		{@render navigationIcon(House, '/')}
 		{@render navigationIcon(MessageSquareMore, '/chat')}
 		{@render navigationIcon(Briefcase, '/workspaces')}
 		{@render drawer()}

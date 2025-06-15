@@ -121,7 +121,7 @@
 
 <div class="space-y-6 px-2">
 	<div class="flex justify-between items-center">
-		<h2 class="text-xl font-semibold text-gray-700">Gestion des utilisateurs</h2>
+		<h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200">Gestion des utilisateurs</h2>
 	</div>
 
 	<Card>
@@ -157,8 +157,12 @@
 							</TableCell>
 							<TableCell>
 								<div class="flex flex-col">
-									<span class="font-medium text-gray-800">{user.name}</span>
-									<span class="text-sm text-gray-500">{user.email}</span>
+									<span class="font-medium text-gray-800 dark:text-gray-200">
+										{user.name}
+									</span>
+									<span class="text-sm text-gray-500 dark:text-gray-400">
+										{user.email}
+									</span>
 								</div>
 							</TableCell>
 							<TableCell class="text-right">

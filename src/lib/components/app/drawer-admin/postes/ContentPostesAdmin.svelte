@@ -40,7 +40,7 @@
 
 <div class="space-y-6 px-2">
     <div class="flex justify-between items-center">
-        <h2 class="text-xl font-semibold text-gray-700">Gestion des Postes</h2>
+        <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200">Gestion des Postes</h2>
     </div>
 
     <div class="space-y-4">
