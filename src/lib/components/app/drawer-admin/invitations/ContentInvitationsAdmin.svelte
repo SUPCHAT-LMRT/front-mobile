@@ -174,7 +174,7 @@
 										Copier le lien
 									</Button>
 									<Button onclick={copyToken} class="p-2 bg-[#61A0AF] text-white rounded-md hover:bg-[#4B7986]" aria-label="Copier le token">
-										Copier le token
+										Copier le code du lien
 									</Button>
 								</div>
 							</div>

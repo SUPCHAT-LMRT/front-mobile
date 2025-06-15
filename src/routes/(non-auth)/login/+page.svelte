@@ -78,12 +78,12 @@
 
 	<Dialog bind:open={showInviteModal}>
 		<DialogContent class="bg-white dark:bg-gray-800 p-6 rounded shadow-md w-80">
-			<DialogTitle class="text-lg font-medium mb-4">Entrez votre token</DialogTitle>
+			<DialogTitle class="text-lg font-medium mb-4">Entrez votre code d'invitation</DialogTitle>
 			<input
 				type="text"
 				class="border p-2 w-full mb-4 rounded"
 				bind:value={token}
-				placeholder="Token"
+				placeholder="Code d'invitation"
 			/>
 			<div class="flex justify-end space-x-2">
 				<Button class="outline" size="default" onclick={() => (showInviteModal = false)}>

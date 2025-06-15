@@ -327,13 +327,13 @@
 											Rejoindre un espace
 										</Dialog.Title>
 										<p class="mt-2 text-sm text-gray-700">
-											Entrez votre token pour rejoindre un espace de travail.
+											Entrez votre code d'invitation pour rejoindre un espace de travail.
 										</p>
 									</Dialog.Header>
 									<div class="mt-4 space-y-4">
 										<Input
 											class="w-full rounded-md border p-2"
-											placeholder="Token"
+											placeholder="Code d'invitation"
 											bind:value={joinToken}
 										/>
 										<div class="flex justify-end gap-x-2">

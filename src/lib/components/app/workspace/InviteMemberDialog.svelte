@@ -107,7 +107,7 @@
 				</Button>
 			</div>
 			<div class="flex flex-col gap-1">
-				<label class="text-xs dark:text-gray-300">Token</label>
+				<label class="text-xs dark:text-gray-300">Code d'invitation</label>
 				<input
 					type="text"
 					class="border p-1.5 rounded bg-gray-100 dark:bg-gray-700 text-xs"
@@ -116,7 +116,7 @@
 				/>
 				<Button onclick={copyToken}
 								class="mt-1 touch-manipulation rounded-md bg-[#61A0AF] p-1 text-white hover:bg-[#4B7986]"
-								aria-label="Copier le token">
+								aria-label="Copier le code">
 					<ClipboardCopy size={14} class="sm:h-4 sm:w-4" />
 				</Button>
 			</div>
