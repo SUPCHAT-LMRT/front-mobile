@@ -95,7 +95,7 @@
 
 	<Separator class="my-4" />
 	<p class="text-gray-500 px-2">Admin</p>
-	<div class="px-4 flex flex-col gap-2 justify-start items-start w-full">
+	<div class="flex flex-col gap-2 justify-start items-start w-full">
 
 		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
 			<Drawer.Trigger>
