@@ -2,27 +2,32 @@
 	import { page } from '$app/state';
 	import { smartFly } from '$lib/animation/visibleFly';
 	import { RoomKind } from '$lib/api/room';
+	import { getS3ObjectUrl, S3Bucket } from '$lib/api/s3';
 	import {
 		type Channel,
 		type ChannelMessage,
 		getPrivateChannelMembers,
 		getWorkspaceChannel,
-		getWorkspaceChannelMessages
+		getWorkspaceChannelMessages,
+		uploadChannelFile
 	} from '$lib/api/workspace/channels';
 	import { getWorkspaceMembers } from '$lib/api/workspace/member';
 	import type { Workspace } from '$lib/api/workspace/workspace';
 	import ws from '$lib/api/ws';
 	import '$lib/assets/styles/chats.scss';
+	import FileDropZone from '$lib/components/app/FileDropZone.svelte';
 	import HoveredUserProfile from '$lib/components/app/HoveredUserProfile.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { Button } from '$lib/components/ui/button';
 	import * as ContextMenu from '$lib/components/ui/context-menu';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Drawer from '$lib/components/ui/drawer/index.js';
 	import { Tooltip, TooltipContent, TooltipTrigger } from '$lib/components/ui/tooltip';
-	import { error } from '$lib/toast/toast';
+	import { error, success } from '$lib/toast/toast';
 	import { cn } from '$lib/utils';
 	import { formatDate } from '$lib/utils/formatDate';
 	import { scrollToBottom } from '$lib/utils/scrollToBottom';
+	import { FileIcon } from '@lucide/svelte';
 	import NumberFlow from '@number-flow/svelte';
 	import { format } from 'date-fns';
 	import { fr } from 'date-fns/locale';
@@ -64,11 +69,15 @@
 		message: null
 	});
 
+	let selectedFiles: File[] = $state([]);
+	let sendFileDialogOpen = $state(false);
+
 	let unsubscribeSendMessage: (() => void) | null = null;
 	let unsubscribeMessageReactionAdded: (() => void) | null = null;
 	let unsubscribeMessageReactionRemoved: (() => void) | null = null;
 	let unsubscribeGroupMessageContentEdited: (() => void) | null = null;
 	let unsubscribeGroupMessageDeleted: (() => void) | null = null;
+	let unsubscribeChannelMessageAttachmentCreated: (() => void) | null = null;
 	let inputElement: HTMLDivElement | null = $state(null);
 	let elementsList: HTMLDivElement | null = $state(null);
 	let isAutoScrolling: boolean = $state(false);
@@ -181,11 +190,11 @@
 					author: {
 						userId: msg.sender.userId,
 						pseudo: msg.sender.pseudo,
-						workspaceMemberId: msg.sender.workspaceMemberId,
-						workspacePseudo: msg.sender.workspacePseudo
+						workspaceMemberId: msg.sender.workspaceMemberId
 					},
 					createdAt: new Date(msg.createdAt),
-					reactions: []
+					reactions: [],
+					attachments: []
 				});
 
 				await tick();
@@ -250,6 +259,32 @@
 					deleteMessageDialog.message = null;
 				}
 			});
+
+			unsubscribeChannelMessageAttachmentCreated = ws.subscribe(
+				'channel-message-attachment-created',
+				async ({ message }) => {
+					currentRoom.messages.push({
+						id: message.id,
+						content: '',
+						author: {
+							userId: message.senderUserId,
+							pseudo: message.senderPseudo,
+							workspaceMemberId: message.senderWorkspaceMemberId
+						},
+						createdAt: new Date(message.createdAt),
+						reactions: [],
+						attachments: [
+							{
+								id: message.attachmentFileId,
+								name: message.attachmentFileName
+							}
+						]
+					});
+
+					await tick();
+					await scrollToBottomSafe(elementsList);
+				}
+			);
 		} catch (e) {
 			console.error(e);
 		}
@@ -405,6 +440,33 @@
 			);
 		}
 	};
+
+	function handleFilesSelected(event: File[]) {
+		selectedFiles = event;
+	}
+
+	function handleError(event: string) {
+		error('Erreur', event);
+	}
+
+	async function uploadFiles() {
+		if (selectedFiles.length === 0) return;
+
+		try {
+			// Replace with your upload endpoint
+			await uploadChannelFile(
+				currentWorkspaceId,
+				currentChannelId,
+				selectedFiles[0] // Assuming single file upload for simplicity
+			);
+
+			sendFileDialogOpen = false;
+			success('Fichiers envoyés', 'Fichiers envoyés avec succès!');
+			selectedFiles = [];
+		} catch (e) {
+			error('Erreur', "Echec de l'envoi des fichiers.");
+		}
+	}
 </script>
 
 {#if currentChannel && workspace}
@@ -521,7 +583,7 @@
 									<div class="flex flex-col">
 										<div class="flex items-center gap-2">
 											<HoveredUserProfile userId={message.author.userId} self={false}>
-												<span class="font-semibold">{message.author.workspacePseudo}</span>
+												<span class="font-semibold">{message.author.pseudo}</span>
 											</HoveredUserProfile>
 											<Tooltip>
 												<TooltipTrigger>
@@ -538,9 +600,27 @@
 										</div>
 										<div class="flex flex-col gap-y-2">
 											<div class="flex items-center gap-2">
-												<span class="bg-primary rounded-xl p-2 break-all text-white shadow-lg">
-													{message.content}
-												</span>
+												{#each message.attachments as attachment}
+													<div class="mt-2 flex flex-col items-start">
+														<Button
+															variant="ghost"
+															href={getS3ObjectUrl(S3Bucket.CHANNELS_ATTACHMENTS, attachment.id)}
+															target="_blank"
+															rel="noopener noreferrer"
+															class="h-[50px] w-[50px]"
+														>
+															<FileIcon />
+														</Button>
+														<span class="text-sm text-gray-500">
+															{attachment.name}
+														</span>
+													</div>
+												{/each}
+												{#if message.content.trim() !== ''}
+													<span class="bg-primary rounded-xl p-2 break-all text-white shadow-lg">
+														{message.content}
+													</span>
+												{/if}
 											</div>
 											{@render messageReaction()}
 										</div>
@@ -578,11 +658,32 @@
 															}}
 														/>
 													{:else}
-														<span
-															class="bg-primary w-full rounded-xl p-2 break-all text-white shadow-lg"
-														>
-															{message.content}
-														</span>
+														{#each message.attachments as attachment}
+															<div class="mt-2 flex flex-col items-end">
+																<Button
+																	variant="ghost"
+																	href={getS3ObjectUrl(
+																		S3Bucket.CHANNELS_ATTACHMENTS,
+																		attachment.id
+																	)}
+																	target="_blank"
+																	rel="noopener noreferrer"
+																	class="h-[50px] w-[50px]"
+																>
+																	<FileIcon />
+																</Button>
+																<span class="text-sm text-gray-500">
+																	{attachment.name}
+																</span>
+															</div>
+														{/each}
+														{#if message.content.trim() !== ''}
+															<span
+																class="bg-primary w-full rounded-xl p-2 break-all text-white shadow-lg"
+															>
+																{message.content}
+															</span>
+														{/if}
 													{/if}
 												</div>
 											</div>
@@ -679,6 +780,46 @@
 			>
 				<Languages size={20} class="text-primary" />
 			</Button>
+
+			<!-- Send file button -->
+			<Dialog.Root bind:open={sendFileDialogOpen}>
+				<Dialog.Trigger
+					class="rounded-lg p-2 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
+					aria-label="Envoyer un fichier"
+				>
+					<FileIcon size={20} class="text-primary" />
+				</Dialog.Trigger>
+				<Dialog.Content>
+					<Dialog.Header>
+						<Dialog.Title>Envoyer un fichier</Dialog.Title>
+						<Dialog.Description>
+							Sélectionnez un fichier à envoyer dans le canal #{currentChannel.name}
+						</Dialog.Description>
+					</Dialog.Header>
+
+					<div class="container mx-auto max-w-2xl p-6">
+						<FileDropZone
+							accept="image/*,.pdf,.doc,.docx"
+							multiple={false}
+							maxSize={5 * 1024 * 1024}
+							filesSelected={handleFilesSelected}
+							error={handleError}
+							class="mb-6"
+						/>
+
+						{#if selectedFiles.length > 0}
+							<div class="flex gap-2">
+								<button
+									class="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2"
+									onclick={uploadFiles}
+								>
+									Envoyer {selectedFiles.length} fichier(s)
+								</button>
+							</div>
+						{/if}
+					</div>
+				</Dialog.Content>
+			</Dialog.Root>
 
 			<button
 				class="rounded-lg p-2 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
