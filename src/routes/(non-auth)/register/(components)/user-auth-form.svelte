@@ -7,7 +7,7 @@
 	import { getInviteLinkData, registerUser } from '$lib/api/user';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
-	import { notifyByLevel, success } from '$lib/toast/toast';
+	import { error, notifyByLevel, success } from '$lib/toast/toast';
 	import { goto } from '$lib/utils/goto';
 	import { Loader } from 'lucide-svelte';
 	import { onMount } from 'svelte';
@@ -39,12 +39,10 @@
 		isSubmitting = true;
 
 		if (!passwordRegex.test(password)) {
-			notifyByLevel({
-				title: "Mot de passe invalide",
-				level: "error",
-				message:
-					"Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.",
-			});
+			error(
+				'Mot de passe invalide',
+				'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.'
+			);
 			isSubmitting = false;
 			return;
 		}
