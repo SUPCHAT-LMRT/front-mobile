@@ -27,10 +27,10 @@
 </script>
 
 <div class="flex flex-col gap-1 justify-start items-start">
-	<div class="px-3 w-full">
+	<div class="px-4 w-full">
 		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
 			<Drawer.Trigger>
-				<Button variant="option" size="sm" class="text-gray-800 justify-start">
+				<Button variant="option" size="sm" class="text-gray-800 justify-start dark:text-gray-200">
 					<Smile />
 					Quel est votre statut ?
 				</Button>
@@ -50,7 +50,7 @@
 	<div class="px-4 flex flex-col gap-2 justify-start items-start w-full">
 		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
 			<Drawer.Trigger>
-				<Button variant="option" size="sm" class="text-gray-800 justify-start">
+				<Button variant="option" size="sm" class="text-gray-800 justify-start dark:text-gray-200">
 					<BellOff />
 					Suspendre les notifications
 				</Button>
@@ -64,11 +64,13 @@
 				</Drawer.Content>
 			</Drawer.Portal>
 		</Drawer.NestedRoot>
+	</div>
 
+	<div class="px-4 flex flex-col gap-2 justify-start items-start w-full">
 		<Button
 			variant="option"
 			size="sm"
-			class="text-gray-800"
+			class="text-gray-800 justify-start dark:text-gray-200"
 			onclick={() => selectStatus(authenticatedUserState.user.status === PrivateStatus.AWAY ? PrivateStatus.ONLINE : PrivateStatus.AWAY)}
 		>
 			{#if authenticatedUserState.user.status === PrivateStatus.AWAY}
@@ -79,10 +81,12 @@
 				Me signaler absent(e)
 			{/if}
 		</Button>
+	</div>
 
+	<div class="px-4 flex flex-col gap-2 justify-start items-start w-full">
 		<Drawer.NestedRoot setBackgroundColorOnScale={false}>
 			<Drawer.Trigger>
-				<Button variant="option" size="sm" class="text-gray-800 justify-start">
+				<Button variant="option" size="sm" class="text-gray-800 justify-start dark:text-gray-200">
 					<User />
 					Authentification
 				</Button>
@@ -130,7 +134,7 @@
 			<Drawer.Portal>
 				<Drawer.Overlay class="fixed inset-0 bg-black/40" />
 				<Drawer.Content
-					class="bg-white flex flex-col fixed bottom-0 left-0 right-0 max-h-[96%] rounded-t-[10px]"
+					class="flex flex-col fixed bottom-0 left-0 right-0 max-h-[96%] rounded-t-[10px] overflow-hidden"
 				>
 					<div class="max-w-md w-full mx-auto flex flex-col overflow-auto p-4 rounded-t-[10px]">
 						<ContentPostesAdmin />

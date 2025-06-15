@@ -111,12 +111,12 @@
 
 <div class="space-y-6 px-2">
 	<div class="flex justify-between items-center">
-		<h2 class="text-xl font-semibold text-gray-700">Gestion des invitations</h2>
+		<h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200">Gestion des invitations</h2>
 	</div>
 
 	<Card>
 		<CardHeader>
-			<CardTitle class="text-gray-700">Liste des invitations en cours</CardTitle>
+			<CardTitle class="text-gray-700 dark:text-gray-200">Liste des invitations en cours</CardTitle>
 			<div class="flex justify-between items-center">
 				<CardDescription>Gérez les invitations de votre application</CardDescription>
 				<Dialog.Root bind:open={isDialogOpen}>
@@ -140,7 +140,7 @@
 								<Input id="username" bind:value={firstName} class="col-span-3" />
 							</div>
 							<div class="grid grid-cols-4 items-center gap-4">
-								<Label for="mail" class="text-right">Mail</Label>
+								<Label for="mail" class="text-r ight">Mail</Label>
 								<Input id="mail" type="email" bind:value={email} class="col-span-3" />
 							</div>
 						</div>
