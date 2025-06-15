@@ -11,6 +11,7 @@
 	import { fallbackAvatarLetters } from '$lib/utils/fallbackAvatarLetters.js';
 	import { goto } from '$lib/utils/goto';
 	import { onMount } from 'svelte';
+	import SearchBar from '$lib/components/app/SearchBar.svelte';
 
 	let recentChats: StoreResult<any[]> = $state({
 		state: StoreResultState.LOADING,
@@ -90,7 +91,13 @@
 </script>
 
 <div class="p-4">
-	<p class="mb-4 text-xs font-bold text-gray-600 uppercase dark:text-gray-300">Messages privés</p>
+	<div
+		class="flex justify-center p-2 z-10 hover:!bg-gray-200 dark:bg-gray-800 hover:dark:!bg-gray-800 border-b dark:border-gray-700"
+	>
+		<SearchBar />
+	</div>
+
+	<p class="mb-4 pt-2 text-xs font-bold text-gray-600 uppercase dark:text-gray-300">Messages privés</p>
 
 	{#if recentChats.state === StoreResultState.LOADING}
 		{#each Array(10) as _}
