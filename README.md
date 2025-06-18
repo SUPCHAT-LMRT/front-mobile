@@ -62,6 +62,6 @@ Ce client web fait partie d’un projet plus large composé de 3 briques princip
 
 - **API Backend** – [`back-go`](https://github.com/SUPCHAT-LMRT/back-go)
 - **Frontend Web** – [`front-web`](https://github.com/SUPCHAT-LMRT/front-web)
-- **Frontend Mobile** – [`front-mobile`](https://github.com/SUPCHAT-LMRT/front-mobile)*(ce dépôt)*
+- **Frontend Mobile** – [`front-mobile`](https://github.com/SUPCHAT-LMRT/front-mobile) *(ce dépôt)*
 
 L'architecture suit une stricte séparation des responsabilités. Aucune logique métier n’est exécutée côté client.
